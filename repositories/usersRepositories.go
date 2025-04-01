@@ -3,6 +3,7 @@ package repositories
 import (
 	"context"
 	"it_school/models"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -57,9 +58,9 @@ func (r *UsersRepository) FindByEmail(c context.Context, email string) (models.U
 	return user, nil
 }
 
-func (r *UsersRepository) SetResetToken(c context.Context, email, resetToken string) error {
-	query := `UPDATE users SET reset_token = $1, reset_token_expires_at = NOW() + INTERVAL '15 minutes' WHERE email = $2`
-	_, err := r.db.Exec(c, query, resetToken, email)
+func (r *UsersRepository) SetResetToken(c context.Context, email, resetToken string, expirationTime time.Time) error {
+	query := `UPDATE users SET reset_token = $1, reset_token_expires_at = $2 WHERE email = $3`
+	_, err := r.db.Exec(c, query, resetToken, expirationTime, email)
 	return err
 }
 
@@ -71,6 +72,12 @@ func (r *UsersRepository) GetUserByResetToken(c context.Context, resetToken stri
 		return nil, err
 	}
 	return &user, nil
+}
+
+func (r *UsersRepository) ClearResetToken(c context.Context, userID int) error {
+	query := `UPDATE users SET reset_token = NULL, reset_token_expires_at = NULL WHERE id = $1`
+	_, err := r.db.Exec(c, query, userID)
+	return err
 }
 
 func (r *UsersRepository) UpdatePassword(c context.Context, userID int, hashedPassword string) error {

@@ -2,18 +2,18 @@ package utils
 
 import (
 	"fmt"
+	"it_school/config"
 	"net/smtp"
-	"os"
 )
 
 // SendEmail отправляет письмо с токеном на почту
 func SendEmail(to, subject, body string) error {
-	from := os.Getenv("SMTP_EMAIL")
-	password := os.Getenv("SMTP_PASSWORD")
+	from := config.Config.SMTPEmail
+	password := config.Config.SMTPPassword
 
 
-	smtpHost := "smtp.gmail.com"
-	smtpPort := "587"
+	smtpHost := config.Config.SMTPHost
+	smtpPort := config.Config.SMTPPort
 
 	// Формируем заголовки и тело письма
 	message := fmt.Sprintf("Subject: %s\r\n\r\n%s", subject, body)

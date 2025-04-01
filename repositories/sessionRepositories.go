@@ -16,19 +16,19 @@ func NewSessionsRepository(conn *pgxpool.Pool) *SessionsRepository {
 	return &SessionsRepository{db: conn}
 }
 
-func (r *SessionsRepository) CreateSession(ctx context.Context, session models.Session) error {
-	_, err := r.db.Exec(ctx,
+func (r *SessionsRepository) CreateSession(c context.Context, session models.Session) error {
+	_, err := r.db.Exec(c,
 		`INSERT INTO sessions (user_id, refresh_token, expires_at) 
 		 VALUES ($1, $2, $3)`,
 		session.UserID, session.RefreshToken, session.ExpiresAt)
 	return err
 }
 
-func (r *SessionsRepository) GetSession(ctx context.Context, refreshToken string) (models.Session, int, error) {
+func (r *SessionsRepository) GetSession(c context.Context, refreshToken string) (models.Session, int, error) {
     var session models.Session
     var roleID int
 
-    err := r.db.QueryRow(ctx,
+    err := r.db.QueryRow(c,
         `SELECT s.id, s.user_id, s.refresh_token, s.expires_at, u.role_id 
          FROM sessions s
          JOIN users u ON s.user_id = u.id
@@ -40,8 +40,8 @@ func (r *SessionsRepository) GetSession(ctx context.Context, refreshToken string
 }
 
 
-func (r *SessionsRepository) UpdateSession(ctx context.Context, session models.Session) error {
-	_, err := r.db.Exec(ctx,
+func (r *SessionsRepository) UpdateSession(c context.Context, session models.Session) error {
+	_, err := r.db.Exec(c,
 		`UPDATE sessions 
 		 SET refresh_token = $1, expires_at = $2 
 		 WHERE user_id = $3`,
@@ -49,8 +49,8 @@ func (r *SessionsRepository) UpdateSession(ctx context.Context, session models.S
 	return err
 }
 
-func (r *SessionsRepository) DeleteSession(ctx context.Context, refreshToken string) error {
-	_, err := r.db.Exec(ctx,
+func (r *SessionsRepository) DeleteSession(c context.Context, refreshToken string) error {
+	_, err := r.db.Exec(c,
 		`DELETE FROM sessions 
 		 WHERE refresh_token = $1`,
 		refreshToken)
