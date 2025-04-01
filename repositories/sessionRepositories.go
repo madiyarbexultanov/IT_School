@@ -24,15 +24,29 @@ func (r *SessionsRepository) CreateSession(ctx context.Context, session models.S
 	return err
 }
 
-func (r *SessionsRepository) GetSession(ctx context.Context, refreshToken string) (models.Session, error) {
-	var session models.Session
-	err := r.db.QueryRow(ctx,
-		`SELECT id, user_id, refresh_token, expires_at 
-		 FROM sessions 
-		 WHERE refresh_token = $1 AND expires_at > NOW()`,
-		refreshToken).
-		Scan(&session.ID, &session.UserID, &session.RefreshToken, &session.ExpiresAt)
-	return session, err
+func (r *SessionsRepository) GetSession(ctx context.Context, refreshToken string) (models.Session, int, error) {
+    var session models.Session
+    var roleID int
+
+    err := r.db.QueryRow(ctx,
+        `SELECT s.id, s.user_id, s.refresh_token, s.expires_at, u.role_id 
+         FROM sessions s
+         JOIN users u ON s.user_id = u.id
+         WHERE s.refresh_token = $1 AND s.expires_at > NOW()`,
+        refreshToken).
+        Scan(&session.ID, &session.UserID, &session.RefreshToken, &session.ExpiresAt, &roleID)
+
+    return session, roleID, err
+}
+
+
+func (r *SessionsRepository) UpdateSession(ctx context.Context, session models.Session) error {
+	_, err := r.db.Exec(ctx,
+		`UPDATE sessions 
+		 SET refresh_token = $1, expires_at = $2 
+		 WHERE user_id = $3`,
+		session.RefreshToken, session.ExpiresAt, session.UserID)
+	return err
 }
 
 func (r *SessionsRepository) DeleteSession(ctx context.Context, refreshToken string) error {

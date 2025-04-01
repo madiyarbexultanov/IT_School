@@ -6,6 +6,7 @@ import (
 	"it_school/docs"
 	"it_school/handlers"
 	"it_school/logger"
+	"it_school/middlewares"
 	"it_school/repositories"
 	"time"
 
@@ -65,8 +66,10 @@ func main() {
 
 	usersRepository := repositories.NewUsersRepository(conn)
 	SessionsRepository := repositories.NewSessionsRepository(conn)
+	RolesRepository := repositories.NewRoleRepository(conn)
 
-	authHandler := handlers.NewAuthHandler(usersRepository, SessionsRepository)
+	authHandler := handlers.NewAuthHandler(usersRepository, SessionsRepository, RolesRepository)
+	resetPasswordHandler := handlers.NewResetPasswordHandler(usersRepository)
 
 	// Маршруты для аутентификации
 	authGroup := r.Group("/auth")
@@ -74,7 +77,27 @@ func main() {
 		authGroup.POST("/login", authHandler.Login)
 		authGroup.POST("/logout", authHandler.Logout)
 		authGroup.POST("/refresh", authHandler.Refresh)
+
+		authGroup.POST("/reset-password", resetPasswordHandler.ResetPassword)
+		authGroup.POST("/new-password", resetPasswordHandler.SetNewPassword)
 	}
+
+	// Приватные маршруты (требуют аутентификацию)
+	privateRoutes := r.Group("/")
+	privateRoutes.Use(middlewares.AuthMiddleware(SessionsRepository, usersRepository, RolesRepository))
+
+	// // Доступ к настройкам только у Директора
+	// privateRoutes.GET("/settings", middlewares.PermissionMiddleware("access_settings"), _)
+
+	// // Доступ к курсам только у Куратора
+	// privateRoutes.GET("/courses", middlewares.PermissionMiddleware("access_courses"), _)
+
+	// // Доступ к ученикам только у Куратора
+	// privateRoutes.GET("/students", middlewares.PermissionMiddleware("access_students"), _)
+
+	// // Доступ к урокам только у Менеджера
+	// privateRoutes.GET("/lessons", middlewares.PermissionMiddleware("access_lessons"), _)
+
 
 	docs.SwaggerInfo.BasePath = "/"
 	r.GET("/swagger/*any", swagger.WrapHandler(swaggerfiles.Handler))

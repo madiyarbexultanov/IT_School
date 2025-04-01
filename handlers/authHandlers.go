@@ -1,8 +1,12 @@
 package handlers
 
 import (
+	"context"
+	"crypto/hmac"
 	"crypto/rand"
+	"crypto/sha256"
 	"encoding/base64"
+	"fmt"
 	"it_school/config"
 	"it_school/models"
 	"it_school/repositories"
@@ -12,6 +16,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type AuthRequest struct {
@@ -22,12 +27,14 @@ type AuthRequest struct {
 type AuthHandler struct {
 	usersRepo    *repositories.UsersRepository
 	sessionsRepo *repositories.SessionsRepository
+	rolesRepo 	 *repositories.RoleRepository
 }
 
-func NewAuthHandler(usersRepo *repositories.UsersRepository, sessionsRepo *repositories.SessionsRepository) *AuthHandler {
+func NewAuthHandler(usersRepo *repositories.UsersRepository, sessionsRepo *repositories.SessionsRepository, rolesRepo *repositories.RoleRepository) *AuthHandler {
 	return &AuthHandler{
 		usersRepo:    usersRepo,
 		sessionsRepo: sessionsRepo,
+		rolesRepo: 	  rolesRepo,
 	}
 }
 
@@ -38,113 +45,185 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
-	// Получаем пользователя из репозитория
+	// Пытаемся найти пользователя по email
 	user, err := h.usersRepo.FindByEmail(c.Request.Context(), req.Email)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, models.NewApiError("invalid credentials"))
 		return
 	}
 
-	// Проверяем пароль
+	// Проверяем правильность пароля
 	if !checkPasswordHash(req.Password, user.PasswordHash) {
 		c.JSON(http.StatusUnauthorized, models.NewApiError("invalid credentials"))
 		return
 	}
 
-	// Генерируем JWT токен
-	token, err := h.generateJWTToken(user.Id)
+	// Получаем роль пользователя
+	role, err := h.rolesRepo.GetRoleByID(c.Request.Context(), user.RoleID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.NewApiError("Couldn't find role"))
+		return
+	}
+
+	// Генерация JWT токена
+	token, err := h.generateJWTToken(c.Request.Context(), user.Id, user.RoleID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.NewApiError("failed to generate token"))
 		return
 	}
 
-	// Создаем сессию
-	refreshToken, err := generateRefreshToken()
+	// Генерация refresh токена
+	refreshToken, err := generateRefreshToken(user.Id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.NewApiError("failed to generate refresh token"))
 		return
 	}
 
+	// Создаем сессию пользователя
 	session := models.Session{
 		UserID:       user.Id,
 		RefreshToken: refreshToken,
-		ExpiresAt:    time.Now().Add(time.Hour * 24 * 7), // 7 дней
+		ExpiresAt:    time.Now().Add(time.Hour * 24 * 7), // Срок действия сессии — 7 дней
 	}
 
+	// Сохраняем сессию в репозитории
 	if err := h.sessionsRepo.CreateSession(c.Request.Context(), session); err != nil {
 		c.JSON(http.StatusInternalServerError, models.NewApiError("failed to create session"))
 		return
 	}
 
-	// Устанавливаем cookie
+	// Устанавливаем cookie с refresh токеном
 	c.SetCookie("session_token", refreshToken, int(session.ExpiresAt.Unix()), "/", "", false, true)
 
+	// Ответ с JWT токеном и ролью пользователя
 	c.JSON(http.StatusOK, gin.H{
 		"token":   token,
-		"expires": time.Now().Add(time.Hour * 1).Unix(), // JWT на 1 час
+		"role":    role.Name,
+		"expires": time.Now().Add(time.Hour * 1).Unix(), // Время истечения JWT токена (1 час)
 	})
 }
 
+
 func (h *AuthHandler) Logout(c *gin.Context) {
+	// Получаем session token из cookie
 	sessionToken, err := c.Cookie("session_token")
 	if err != nil {
 		c.JSON(http.StatusBadRequest, models.NewApiError("no session token"))
 		return
 	}
 
+	// Удаляем сессию по session token
 	if err := h.sessionsRepo.DeleteSession(c.Request.Context(), sessionToken); err != nil {
 		c.JSON(http.StatusInternalServerError, models.NewApiError("failed to delete session"))
 		return
 	}
 
+	// Удаляем cookie с session token
 	c.SetCookie("session_token", "", -1, "/", "", false, true)
+
+	// Ответ о успешном выходе
 	c.JSON(http.StatusOK, gin.H{"message": "successfully logged out"})
 }
 
+// Refresh — обработчик для обновления токенов
 func (h *AuthHandler) Refresh(c *gin.Context) {
+	// Получаем session token из cookie
 	sessionToken, err := c.Cookie("session_token")
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, models.NewApiError("no session token"))
 		return
 	}
 
-	session, err := h.sessionsRepo.GetSession(c.Request.Context(), sessionToken)
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, models.NewApiError("invalid session token"))
+	// Получаем сессию по session token
+	session, roleID, err := h.sessionsRepo.GetSession(c.Request.Context(), sessionToken)
+	if err != nil || time.Now().After(session.ExpiresAt) {
+		c.JSON(http.StatusUnauthorized, models.NewApiError("invalid or expired session token"))
 		return
 	}
 
-	token, err := h.generateJWTToken(session.UserID)
+	// Генерация нового JWT токена
+	token, err := h.generateJWTToken(c.Request.Context(), session.UserID, roleID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.NewApiError("failed to generate token"))
 		return
 	}
 
+	// Генерация нового refresh токена
+	newRefreshToken, err := generateRefreshToken(session.UserID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.NewApiError("failed to generate refresh token"))
+		return
+	}
+
+	// Обновляем сессию с новым refresh токеном и временем истечения
+	session.RefreshToken = newRefreshToken
+	session.ExpiresAt = time.Now().Add(time.Hour * 24 * 7)
+
+	// Сохраняем обновленную сессию
+	if err := h.sessionsRepo.UpdateSession(c.Request.Context(), session); err != nil {
+		c.JSON(http.StatusInternalServerError, models.NewApiError("failed to update session"))
+		return
+	}
+
+	// Устанавливаем новый session token в cookie
+	c.SetCookie("session_token", newRefreshToken, int(session.ExpiresAt.Unix()), "/", "", false, true)
+
+	// Ответ с новым токеном
 	c.JSON(http.StatusOK, gin.H{
 		"token":   token,
-		"expires": time.Now().Add(time.Hour * 1).Unix(),
+		"expires": time.Now().Add(time.Hour * 1).Unix(), // Время истечения нового токена
 	})
 }
 
-func (h *AuthHandler) generateJWTToken(userID int) (string, error) {
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"sub": strconv.Itoa(userID),
-		"exp": time.Now().Add(time.Hour * 1).Unix(),
-	})
-	return token.SignedString([]byte(config.Config.JwtSecretKey))
-}
-
-func generateRefreshToken() (string, error) {
-	b := make([]byte, 32)
-	_, err := rand.Read(b)
+// generateJWTToken — генерирует JWT токен с информацией о пользователе и его роли
+func (h *AuthHandler) generateJWTToken(ctx context.Context, userID, roleID int) (string, error) {
+	// Находим пользователя по его ID
+	user, err := h.usersRepo.FindById(ctx, userID)
 	if err != nil {
 		return "", err
 	}
-	return base64.URLEncoding.EncodeToString(b), nil
+
+	// Получаем роль пользователя
+	role, err := h.rolesRepo.GetRoleByID(ctx, user.RoleID)
+	if err != nil {
+		return "", err
+	}
+
+	// Создаем JWT токен с ролью и ID пользователя
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"sub":     strconv.Itoa(userID),
+		"role":    role.Name,
+		"role_id": roleID, // Добавлено role_id для более удобной проверки
+		"exp":     time.Now().Add(time.Hour * 1).Unix(), // Время истечения токена — 1 час
+	})
+
+	// Подписываем и возвращаем токен
+	return token.SignedString([]byte(config.Config.JwtSecretKey))
 }
 
+// Генерация Refresh Token с HMAC
+func generateRefreshToken(userID int) (string, error) {
+	// Генерация случайных данных для подписи
+	b := make([]byte, 32)
+	if _, err := rand.Read(b); err != nil {
+		return "", err
+	}
+
+	// Кодируем user_id в base64
+	userIDBase64 := base64.URLEncoding.EncodeToString([]byte(fmt.Sprintf("%d", userID)))
+
+	// HMAC для подписи
+	mac := hmac.New(sha256.New, []byte(config.Config.JwtSecretKey))
+	mac.Write(b)
+	signature := mac.Sum(nil)
+
+	// Генерация refresh token в формате userID.signature
+	refreshToken := fmt.Sprintf("%s.%s", userIDBase64, base64.URLEncoding.EncodeToString(signature))
+	return refreshToken, nil
+}
+
+// checkPasswordHash — проверяет правильность пароля, сравнивая его с хешом
 func checkPasswordHash(password, hash string) bool {
-	// Реализация проверки пароля (например, bcrypt)
-	// return bcrypt.CompareHashAndPassword([]byte(hash), []byte(password)) == nil
-	return true // Заглушка - замените на реальную проверку
+	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
+	return err == nil
 }

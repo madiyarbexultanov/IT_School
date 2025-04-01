@@ -47,15 +47,6 @@ func (r *UsersRepository) FindById(c context.Context, id int) (models.User, erro
 	return user, nil
 }
 
-func (r *UsersRepository) ChangePasswordHash(c context.Context, id int, password string) error {
-	_, err := r.db.Exec(c, "update users set password=$1 where id=$2", password, id)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-
 func (r *UsersRepository) FindByEmail(c context.Context, email string) (models.User, error) {
 	var user models.User
 	row := r.db.QueryRow(c, "select id, email, password from users where email = $1", email)
@@ -66,7 +57,24 @@ func (r *UsersRepository) FindByEmail(c context.Context, email string) (models.U
 	return user, nil
 }
 
-func (r *UsersRepository) AssignRole(c context.Context, userID int, roleID int) error {
-	_, err := r.db.Exec(c, "UPDATE users SET role_id = $1 WHERE id = $2", roleID, userID)
+func (r *UsersRepository) SetResetToken(c context.Context, email, resetToken string) error {
+	query := `UPDATE users SET reset_token = $1, reset_token_expires_at = NOW() + INTERVAL '15 minutes' WHERE email = $2`
+	_, err := r.db.Exec(c, query, resetToken, email)
+	return err
+}
+
+func (r *UsersRepository) GetUserByResetToken(c context.Context, resetToken string) (*models.User, error) {
+	var user models.User
+	query := `SELECT id, email FROM users WHERE reset_token = $1 AND reset_token_expires_at > NOW()`
+	err := r.db.QueryRow(c, query, resetToken).Scan(&user.Id, &user.Email)
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
+func (r *UsersRepository) UpdatePassword(c context.Context, userID int, hashedPassword string) error {
+	query := `UPDATE users SET password = $1, reset_token = NULL WHERE id = $2`
+	_, err := r.db.Exec(c, query, hashedPassword, userID)
 	return err
 }
