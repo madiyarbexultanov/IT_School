@@ -35,13 +35,14 @@ func (r *LessonsRepository) Create(c context.Context, lessons models.Lessons) (u
 	l := logger.GetLogger()
 	lessons.Id = uuid.New()
 
-	row := r.db.QueryRow(c, `INSERT INTO lessons (id, student_id, date, feedback, status, feedback_date, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7) 
+	row := r.db.QueryRow(c, `INSERT INTO lessons (id, student_id, date, feedback, payment_status, feedback_date, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7) 
 RETURNING id`,
 		lessons.Id,
 		lessons.StudentId,
 		lessons.Date,
 		lessons.Feedback,
-		lessons.Status,
+		lessons.PaymentStatus,
+		lessons.LessonsStatus,
 		lessons.FeedbackDate,
 		lessons.CreatedAt)
 
@@ -60,7 +61,8 @@ func (r *LessonsRepository) FindById(c context.Context, lessonsId uuid.UUID) (mo
 	l.student_id,
 	l.date, 
 	l.feedback,
-	l.status,
+	l.payment_status,
+	l.lessons_status,
 	l.feedback_date,
 	l.created_at
 	from lessons l
@@ -73,7 +75,8 @@ func (r *LessonsRepository) FindById(c context.Context, lessonsId uuid.UUID) (mo
 		&lessons.StudentId,
 		&lessons.Date,
 		&lessons.Feedback,
-		&lessons.Status,
+		&lessons.PaymentStatus,
+		&lessons.LessonsStatus,
 		&lessons.FeedbackDate,
 		&lessons.CreatedAt); err != nil {
 		return models.Lessons{}, err
@@ -88,18 +91,25 @@ func (r *LessonsRepository) FindAll(c context.Context, filters models.LessonsFil
 	l.student_id,
 	l.date, 
 	l.feedback,
-	l.status,
+	l.payment_status,
+	l.lessons_status,
 	l.feedback_date,
 	l.created_at
 	from lessons l
 	where 1=1
 	`
-	//http://localhost:8081/lessons?status=не оплачен, http://localhost:8081/lessons?status=предоплата
+	//http://localhost:8081/lessons?payment_status=не оплачен, http://localhost:8081/lessons?payment_status=предоплата
+	//http://localhost:8081/lessons?lessonss_status=проведен
 	params := pgx.NamedArgs{}
 
-	if filters.Status != "" {
-		sql = fmt.Sprintf("%s and l.status = @status", sql)
-		params["status"] = filters.Status
+	if filters.PaymentStatus != "" {
+		sql = fmt.Sprintf("%s and l.payment_status = @payment_status", sql)
+		params["payment_status"] = filters.PaymentStatus
+	}
+
+	if filters.LessonsStatus != "" {
+		sql = fmt.Sprintf("%s and l.lessons_status = @lessons_status", sql)
+		params["lessons_status"] = filters.LessonsStatus
 	}
 
 	row, err := r.db.Query(c, sql, params)
@@ -115,7 +125,8 @@ func (r *LessonsRepository) FindAll(c context.Context, filters models.LessonsFil
 			&lesson.StudentId,
 			&lesson.Date,
 			&lesson.Feedback,
-			&lesson.Status,
+			&lesson.PaymentStatus,
+			&lesson.LessonsStatus,
 			&lesson.FeedbackDate,
 			&lesson.CreatedAt)
 		if err != nil {
@@ -148,14 +159,16 @@ func (r *LessonsRepository) Update(c context.Context, updateLessons models.Lesso
 		student_id = $1,
 		date = $2,
 		feedback = $3,
-		status = $4,
-		feedback_date = $5,
-		created_at = $6
-	WHERE id = $7`,
+		payment_status = $4,
+		lessons_status = $5,
+		feedback_date = $6,
+		created_at = $7
+	WHERE id = $8`,
 		updateLessons.StudentId,
 		updateLessons.Date,
 		updateLessons.Feedback,
-		updateLessons.Status,
+		updateLessons.PaymentStatus,
+		updateLessons.LessonsStatus,
 		updateLessons.FeedbackDate,
 		updateLessons.CreatedAt,
 		updateLessons.Id)

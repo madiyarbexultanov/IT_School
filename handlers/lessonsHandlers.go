@@ -11,21 +11,23 @@ import (
 )
 
 type createLessonsrequest struct {
-	StudentId    uuid.UUID `json:"student_id"`
-	Date         *string   `json:"date"`
-	Feedback     string    `json:"feedback"`
-	Status       string    `json:"status"`
-	FeedbackDate *string   `json:"feedback_date"`
-	CreatedAt    *string   `json:"created_at"`
+	StudentId     uuid.UUID `json:"student_id"`
+	Date          *string   `json:"date"`
+	Feedback      string    `json:"feedback"`
+	PaymentStatus string    `json:"payment_status"`
+	LessonsStatus string    `json:"lessons_status"`
+	FeedbackDate  *string   `json:"feedback_date"`
+	CreatedAt     *string   `json:"created_at"`
 }
 
 type updateLessonsrequest struct {
-	StudentId    uuid.UUID `json:"student_id"`
-	Date         *string   `json:"date"`
-	Feedback     string    `json:"feedback"`
-	Status       string    `json:"status"`
-	FeedbackDate *string   `json:"feedback_date"`
-	CreatedAt    *string   `json:"created_at"`
+	StudentId     uuid.UUID `json:"student_id"`
+	Date          *string   `json:"date"`
+	Feedback      string    `json:"feedback"`
+	PaymentStatus string    `json:"payment_status"`
+	LessonsStatus string    `json:"lessons_status"`
+	FeedbackDate  *string   `json:"feedback_date"`
+	CreatedAt     *string   `json:"created_at"`
 }
 
 type LessonsHandlers struct {
@@ -65,12 +67,13 @@ func (h *LessonsHandlers) Create(c *gin.Context) {
 	}
 
 	lessons := models.Lessons{
-		StudentId:    request.StudentId,
-		Date:         &date,
-		Feedback:     request.Feedback,
-		Status:       request.Status,
-		FeedbackDate: &feedbackdate,
-		CreatedAt:    &createdAt,
+		StudentId:     request.StudentId,
+		Date:          &date,
+		Feedback:      request.Feedback,
+		PaymentStatus: request.PaymentStatus,
+		LessonsStatus: request.LessonsStatus,
+		FeedbackDate:  &feedbackdate,
+		CreatedAt:     &createdAt,
 	}
 
 	id, err := h.LessonsRepo.Create(c, lessons)
@@ -102,7 +105,8 @@ func (h *LessonsHandlers) FindById(c *gin.Context) {
 
 func (h *LessonsHandlers) FindAll(c *gin.Context) {
 	filters := models.LessonsFilters{
-		Status: c.Query("status"),
+		PaymentStatus: c.Query("payment_status"),
+		LessonsStatus: c.Query("lessons_status"),
 	}
 	lessons, err := h.LessonsRepo.FindAll(c, filters)
 	if err != nil {
@@ -152,13 +156,13 @@ func (h *LessonsHandlers) Update(c *gin.Context) {
 	}
 
 	lessons = models.Lessons{
-		Id:           lessonsId,
-		StudentId:    request.StudentId,
-		Date:         &date,
-		Feedback:     request.Feedback,
-		Status:       request.Status,
-		FeedbackDate: &feedbackdate,
-		CreatedAt:    &createdAt,
+		StudentId:     request.StudentId,
+		Date:          &date,
+		Feedback:      request.Feedback,
+		PaymentStatus: request.PaymentStatus,
+		LessonsStatus: request.LessonsStatus,
+		FeedbackDate:  &feedbackdate,
+		CreatedAt:     &createdAt,
 	}
 
 	err = h.LessonsRepo.Update(c, lessons)

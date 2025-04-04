@@ -12,16 +12,20 @@ create table students(
 );
 
 
-create table lessonss(
+create table lessons(
     id UUID PRIMARY KEY,
     student_id UUID REFERENCES students(id) ON DELETE CASCADE,
     date DATE NOT NULL,
     feedback TEXT,
-    status payment_status AS ENUM ('оплачен', 'не оплачен', 'предоплата'),
+    payment_status payment_status AS ENUM ('оплачен', 'не оплачен', 'предоплата'),
+    lessons_status lessons_status AS ENUM ('пропущен', 'проведен', 'запланирован', 'отменен'),
     feedback_date TIMESTAMP NOT NULL,
     created_at TIMESTAMP DEFAULT NOW()
 )
 
+CREATE TYPE lessons_status AS ENUM ('пропущен', 'проведен', 'запланирован', 'отменен');
+
+DROP TYPE IF EXISTS lessons_status
 
 
 //Образец для Post
