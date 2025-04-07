@@ -17,5 +17,6 @@ func GetLogger() *zap.Logger {
 		defer logger.Sync()
 		instance = logger
 	})
+
 	return instance
 }

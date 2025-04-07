@@ -68,6 +68,11 @@ func main() {
 	SessionsRepository := repositories.NewSessionsRepository(conn)
 	RolesRepository := repositories.NewRoleRepository(conn)
 
+	StudentsRepository := repositories.NewStudentsRepository(conn)
+	LessonsRepository := repositories.NewLessonsRepository(conn)
+	StudentsHandlers := handlers.NewStudentsHandlers(StudentsRepository)
+	LessonsHandlers := handlers.NewLessonsHandlers(LessonsRepository)
+
 	authHandler := handlers.NewAuthHandler(usersRepository, SessionsRepository, RolesRepository)
 	resetPasswordHandler := handlers.NewResetPasswordHandler(usersRepository)
 
@@ -82,6 +87,20 @@ func main() {
 		authGroup.POST("/reset-password", resetPasswordHandler.ResetPassword)
 		authGroup.POST("/new-password", resetPasswordHandler.SetNewPassword)
 	}
+
+	//http://localhost:8081/students/
+	r.POST("/students", StudentsHandlers.Create)
+	r.GET("/students/:studentId", StudentsHandlers.FindById)
+	r.PUT("/students/:studentId", StudentsHandlers.Update)
+	r.GET("/students", StudentsHandlers.FindAll)
+	r.DELETE("/students/:studentId", StudentsHandlers.Delete)
+
+	//http://localhost:8081/lessons/
+	r.POST("/lessons", LessonsHandlers.Create)
+	r.GET("/lessons/:lessonsId", LessonsHandlers.FindById)
+	r.GET("/lessons", LessonsHandlers.FindAll)
+	r.PUT("/lessons/:lessonsId", LessonsHandlers.Update)
+	r.DELETE("/lessons/:lessonsId", LessonsHandlers.Delete)
 
 	// Приватные маршруты (требуют аутентификацию)
 	privateRoutes := r.Group("/")

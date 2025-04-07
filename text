@@ -1,0 +1,12 @@
+POST
+/* localhost:8081/students */
+{
+    "full_name": "Молдир Берикканова",
+    "phone_number": "+77086108823",
+    "parent_name": "Анна Берикканова",
+    "parent_phone_number": "+77081234567",
+    "courses": ["math", "physics", "chemistry"],
+    "platform_link": "https://platform.example.com",
+    "crm_link": "https://crm.example.com",
+    "created_at": "27.03.2025"
+  }
