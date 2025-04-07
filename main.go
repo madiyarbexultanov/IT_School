@@ -75,6 +75,7 @@ func main() {
 	authGroup := r.Group("/auth")
 	{
 		authGroup.POST("/login", authHandler.Login)
+		authGroup.POST("/signup", authHandler.SignUp)
 		authGroup.POST("/logout", authHandler.Logout)
 		authGroup.POST("/refresh", authHandler.Refresh)
 

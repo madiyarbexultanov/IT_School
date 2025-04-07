@@ -2,15 +2,11 @@ package handlers
 
 import (
 	"context"
-	"crypto/hmac"
-	"crypto/rand"
-	"crypto/sha256"
-	"encoding/base64"
-	"fmt"
 	"it_school/config"
 	"it_school/logger"
 	"it_school/models"
 	"it_school/repositories"
+	"it_school/utils"
 	"net/http"
 	"strconv"
 	"time"
@@ -18,7 +14,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"go.uber.org/zap"
-	"golang.org/x/crypto/bcrypt"
 )
 
 type AuthRequest struct {
@@ -40,6 +35,55 @@ func NewAuthHandler(usersRepo *repositories.UsersRepository, sessionsRepo *repos
 	}
 }
 
+func (h *AuthHandler) SignUp(c *gin.Context) {
+	var req AuthRequest
+
+	// Валидация запроса
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request data"})
+		return
+	}
+
+	// Проверяем, есть ли уже такой email
+	_, err := h.usersRepo.FindByEmail(c, req.Email)
+	if err == nil {
+		c.JSON(http.StatusConflict, gin.H{"error": "Email already exists"})
+		return
+	}
+
+	// Хешируем пароль
+	hashedPassword, err := utils.HashPassword(req.Password)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})
+		return
+	}
+
+	// По умолчанию присваиваем роль "admin"
+	defaultRoleID := 1
+
+	// Создаем пользователя
+	newUser := models.User{
+		Email:        req.Email,
+		PasswordHash: hashedPassword,
+		RoleID:       defaultRoleID,
+	}
+
+	userID, err := h.usersRepo.CreateUser(c, newUser)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user"})
+		return
+	}
+
+	// Генерируем JWT-токен
+	token, err := h.generateJWTToken(c.Request.Context(), userID, defaultRoleID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{"token": token})
+}
+
 func (h *AuthHandler) Login(c *gin.Context) {
     logger := logger.GetLogger()
     var req AuthRequest
@@ -58,7 +102,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
     }
 
     // Проверяем правильность пароля
-    if !checkPasswordHash(req.Password, user.PasswordHash) {
+    if !utils.CheckPasswordHash(req.Password, user.PasswordHash) {
         logger.Warn("Invalid password attempt", zap.String("email", req.Email))
         c.JSON(http.StatusUnauthorized, models.NewApiError("invalid credentials"))
         return
@@ -81,7 +125,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
     }
 
     // Генерация refresh токена
-    refreshToken, err := generateRefreshToken(user.Id)
+    refreshToken, err := utils.GenerateRefreshToken(user.Id)
     if err != nil {
         logger.Error("Failed to generate refresh token", zap.Int("user_id", user.Id), zap.Error(err))
         c.JSON(http.StatusInternalServerError, models.NewApiError("failed to generate refresh token"))
@@ -176,7 +220,7 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
     }
 
     // Генерация нового refresh токена
-    newRefreshToken, err := generateRefreshToken(session.UserID)
+    newRefreshToken, err := utils.GenerateRefreshToken(session.UserID)
     if err != nil {
         logger.Error("Failed to generate refresh token", 
             zap.Int("user_id", session.UserID), 
@@ -210,10 +254,10 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
     })
 }
 
-func (h *AuthHandler) generateJWTToken(ctx context.Context, userID, roleID int) (string, error) {
+func (h *AuthHandler) generateJWTToken(c context.Context, userID, roleID int) (string, error) {
     logger := logger.GetLogger()
     // Находим пользователя по его ID
-    user, err := h.usersRepo.FindById(ctx, userID)
+    user, err := h.usersRepo.FindById(c, userID)
     if err != nil {
         logger.Error("Failed to find user by ID", 
             zap.Int("user_id", userID), 
@@ -222,7 +266,7 @@ func (h *AuthHandler) generateJWTToken(ctx context.Context, userID, roleID int) 
     }
 
     // Получаем роль пользователя
-    role, err := h.rolesRepo.GetRoleByID(ctx, user.RoleID)
+    role, err := h.rolesRepo.GetRoleByID(c, user.RoleID)
     if err != nil {
         logger.Error("Failed to get user role", 
             zap.Int("user_id", userID), 
@@ -242,35 +286,4 @@ func (h *AuthHandler) generateJWTToken(ctx context.Context, userID, roleID int) 
 
     // Подписываем и возвращаем токен
     return token.SignedString([]byte(config.Config.JwtSecretKey))
-}
-
-func generateRefreshToken(userID int) (string, error) {
-    logger := logger.GetLogger()
-    // Генерация случайных данных для подписи
-    b := make([]byte, 32)
-    if _, err := rand.Read(b); err != nil {
-        logger.Error("Failed to generate random bytes for refresh token", zap.Error(err))
-        return "", err
-    }
-
-    // Кодируем user_id в base64
-    userIDBase64 := base64.URLEncoding.EncodeToString([]byte(fmt.Sprintf("%d", userID)))
-
-    // HMAC для подписи
-    mac := hmac.New(sha256.New, []byte(config.Config.JwtSecretKey))
-    mac.Write(b)
-    signature := mac.Sum(nil)
-
-    // Генерация refresh token в формате userID.signature
-    refreshToken := fmt.Sprintf("%s.%s", userIDBase64, base64.URLEncoding.EncodeToString(signature))
-    
-    logger.Debug("Refresh token generated", zap.Int("user_id", userID))
-
-    return refreshToken, nil
-}
-
-// checkPasswordHash — проверяет правильность пароля, сравнивая его с хешом
-func checkPasswordHash(password, hash string) bool {
-	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
-	return err == nil
 }
