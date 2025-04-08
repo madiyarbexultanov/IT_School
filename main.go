@@ -2,11 +2,11 @@ package main
 
 import (
 	"context"
-	"students/config"
-	"students/docs"
-	"students/handlers"
-	"students/logger"
-	"students/repositories"
+	"it_school/config"
+	"it_school/docs"
+	"it_school/handlers"
+	"it_school/logger"
+	"it_school/repositories"
 	"time"
 
 	"github.com/gin-contrib/cors"

@@ -3,8 +3,8 @@ package repositories
 import (
 	"context"
 	"fmt"
-	"students/logger"
-	"students/models"
+	"it_school/logger"
+	"it_school/models"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"

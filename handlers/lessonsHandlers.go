@@ -2,8 +2,8 @@ package handlers
 
 import (
 	"net/http"
-	"students/models"
-	"students/repositories"
+	"it_school/models"
+	"it_school/repositories"
 	"time"
 
 	"github.com/gin-gonic/gin"

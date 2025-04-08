@@ -1,6 +1,6 @@
-module students
+module it_school
 
-go 1.23.0
+go 1.23.3
 
 require (
 	github.com/gin-contrib/cors v1.7.4
