@@ -35,7 +35,7 @@ func (r *LessonsRepository) Create(c context.Context, lessons models.Lessons) (u
 	l := logger.GetLogger()
 	lessons.Id = uuid.New()
 
-	row := r.db.QueryRow(c, `INSERT INTO lessons (id, student_id, date, feedback, payment_status, feedback_date, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7) 
+	row := r.db.QueryRow(c, `INSERT INTO lessons (id, student_id, date, feedback, payment_status, lessons_status,feedback_date, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7) 
 RETURNING id`,
 		lessons.Id,
 		lessons.StudentId,
