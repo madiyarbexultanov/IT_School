@@ -1,8 +1,6 @@
 package handlers
 
 import (
-	"crypto/rand"
-	"encoding/hex"
 	"it_school/logger"
 	"it_school/models"
 	"it_school/repositories"
@@ -31,20 +29,6 @@ func NewResetPasswordHandler(usersRepo *repositories.UsersRepository) *ResetPass
 	return &ResetPasswordHandler{usersRepo: usersRepo}
 }
 
-// generateResetToken — генерирует случайный токен для сброса пароля
-func generateResetToken() (string, error) {
-    logger := logger.GetLogger()
-    b := make([]byte, 16) // Создаем 16 байт случайных данных
-    _, err := rand.Read(b)
-    if err != nil {
-        logger.Error("Failed to generate random bytes for reset token", zap.Error(err))
-        return "", err // Ошибка при генерации токена
-    }
-    token := hex.EncodeToString(b)
-    logger.Debug("Reset token generated", zap.String("token", token))
-    return token, nil // Возвращаем токен в виде строки
-}
-
 // ResetPassword — обработчик для запроса сброса пароля
 func (h *ResetPasswordHandler) ResetPassword(c *gin.Context) {
     logger := logger.GetLogger()
@@ -67,7 +51,7 @@ func (h *ResetPasswordHandler) ResetPassword(c *gin.Context) {
     }
 
     // Генерация токена для сброса пароля
-    resetToken, err := generateResetToken()
+    resetToken, err := utils.GenerateResetToken()
     if err != nil {
         logger.Error("Failed to generate reset token", 
             zap.Int("user_id", user.Id), 

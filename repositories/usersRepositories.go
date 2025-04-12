@@ -50,13 +50,24 @@ func (r *UsersRepository) FindById(c context.Context, id int) (models.User, erro
 
 func (r *UsersRepository) FindByEmail(c context.Context, email string) (models.User, error) {
 	var user models.User
-	row := r.db.QueryRow(c, "select id, email, password from users where email = $1", email)
-	if err := row.Scan(&user.Id, &user.Email, &user.PasswordHash); err != nil {
+	row := r.db.QueryRow(c, "select id, email, password, role_id from users where email = $1", email)
+	if err := row.Scan(&user.Id, &user.Email, &user.PasswordHash, &user.RoleID); err != nil {
 		return models.User{}, err
 	}
 
 	return user, nil
 }
+
+func (r *UsersRepository) CreateUser(c context.Context, user models.User) (int, error) {
+	var userID int
+	query := `INSERT INTO users (email, password, role_id) VALUES ($1, $2, $3) RETURNING id`
+	err := r.db.QueryRow(c, query, user.Email, user.PasswordHash, user.RoleID).Scan(&userID)
+	if err != nil {
+		return 0, err
+	}
+	return userID, nil
+}
+
 
 func (r *UsersRepository) SetResetToken(c context.Context, email, resetToken string, expirationTime time.Time) error {
 	query := `UPDATE users SET reset_token = $1, reset_token_expires_at = $2 WHERE email = $3`
