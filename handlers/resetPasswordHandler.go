@@ -112,13 +112,6 @@ func (h *ResetPasswordHandler) SetNewPassword(c *gin.Context) {
         return
     }
 
-    if time.Now().After(user.ResetTokenExpiresAt) {
-        logger.Warn("Expired reset token attempt", 
-            zap.String("reset_token", req.ResetToken),
-            zap.Time("expires_at", user.ResetTokenExpiresAt))
-        c.JSON(http.StatusUnauthorized, models.NewApiError("invalid or expired reset token"))
-        return
-    }
 
     // Хешируем новый пароль
     hashedPassword, err := utils.HashPassword(req.NewPassword)
