@@ -8,6 +8,7 @@ import (
 	"it_school/logger"
 	"it_school/middlewares"
 	"it_school/repositories"
+	"os"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -127,7 +128,12 @@ func main() {
 		logger.Info("Registered route", zap.String("method", route.Method), zap.String("path", route.Path))
 	}
 
-	if err := r.Run(config.Config.AppHost); err != nil {
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = config.Config.AppHost // локально будет использоваться 8081
+	}
+	
+	if err := r.Run(":" + port); err != nil {
 		logger.Fatal("Server failed to start", zap.Error(err))
 	}
 }

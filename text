@@ -10,3 +10,5 @@ POST
     "crm_link": "https://crm.example.com",
     "created_at": "27.03.2025"
   }
+
+  postgresql://postgres:@:/
