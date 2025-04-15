@@ -65,6 +65,13 @@ func main() {
 		c.Next()
 	})
 
+	// Health-check для Railway
+	r.GET("/", func(c *gin.Context) {
+		c.JSON(200, gin.H{
+			"message": "Server is running!",
+		})
+	})
+
 	usersRepository := repositories.NewUsersRepository(conn)
 	SessionsRepository := repositories.NewSessionsRepository(conn)
 	RolesRepository := repositories.NewRoleRepository(conn)
