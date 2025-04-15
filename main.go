@@ -130,7 +130,7 @@ func main() {
 
 	port := os.Getenv("PORT")
 	if port == "" {
-		port = config.Config.AppHost // локально будет использоваться 8081
+		port = "8081" // просто порт, без хоста
 	}
 	
 	if err := r.Run(":" + port); err != nil {
