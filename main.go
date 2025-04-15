@@ -143,6 +143,8 @@ func main() {
 	if err := r.Run(":" + port); err != nil {
 		logger.Fatal("Server failed to start", zap.Error(err))
 	}
+
+	logger.Info("Starting on port:", zap.String("port", port))
 }
 
 func loadConfig() error {
