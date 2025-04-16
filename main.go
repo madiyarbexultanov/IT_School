@@ -138,14 +138,16 @@ func main() {
 
 	port := os.Getenv("PORT")
 	if port == "" {
-		port = "8081" // просто порт, без хоста
+		port = "8080" // просто порт, без хоста
 	}
+
+	logger.Info("Starting on port:", zap.String("port", port))
 	
 	if err := r.Run(":" + port); err != nil {
 		logger.Fatal("Server failed to start", zap.Error(err))
 	}
 
-	logger.Info("Starting on port:", zap.String("port", port))
+
 }
 
 func loadConfig() error {
