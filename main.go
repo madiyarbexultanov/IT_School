@@ -8,7 +8,6 @@ import (
 	"it_school/logger"
 	"it_school/middlewares"
 	"it_school/repositories"
-	"os"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -136,9 +135,9 @@ func main() {
 		logger.Info("Registered route", zap.String("method", route.Method), zap.String("path", route.Path))
 	}
 
-	port := os.Getenv("PORT")
+	port := viper.GetString("PORT")
 	if port == "" {
-		port = "8080" // или значение из переменной Railway
+		port = "8080"
 	}
 
 	logger.Info("Starting on port:", zap.String("port", port))
