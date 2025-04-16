@@ -138,12 +138,12 @@ func main() {
 
 	port := os.Getenv("PORT")
 	if port == "" {
-		port = "8080" // просто порт, без хоста
+		port = "8080" // или значение из переменной Railway
 	}
 
 	logger.Info("Starting on port:", zap.String("port", port))
 	
-	if err := r.Run(":" + port); err != nil {
+	if err := r.Run("0.0.0.0:" + port); err != nil {
 		logger.Fatal("Server failed to start", zap.Error(err))
 	}
 
