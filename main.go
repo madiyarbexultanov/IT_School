@@ -24,6 +24,7 @@ import (
 )
 
 func main() {
+	gin.SetMode(gin.ReleaseMode)
 	r := gin.New()
 
 	logger := logger.GetLogger()
@@ -46,7 +47,7 @@ func main() {
 	}
 
 	r.Use(cors.New(corsConfig))
-	gin.SetMode(gin.ReleaseMode)
+	
 
 	logger.Info("Loading configuration...")
 	err := loadConfig()
