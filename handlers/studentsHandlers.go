@@ -193,7 +193,14 @@ func (h *StudentsHandlers) Update(c *gin.Context) {
 
 func (h *StudentsHandlers) FindAll(c *gin.Context) {
 
-	Seasons, err := h.StudentsRepo.FindAll(c)
+	filters := models.StudentFilters{
+		Search:    c.Query("search"),
+		Course:    c.Query("course"),
+		IsActive:  c.Query("is_active"),
+		CuratorId: c.Query("curator_id"),
+	}
+
+	Seasons, err := h.StudentsRepo.FindAll(c, filters)
 	if err != nil {
 		c.Status(http.StatusInternalServerError)
 		return

@@ -17,7 +17,8 @@ type ResetPasswordRequest struct {
 }
 
 type ResetPasswordHandler struct {
-	usersRepo *repositories.UsersRepository
+	authRepo *repositories.AuthRepository
+    usersRepo *repositories.UsersRepository
 }
 
 type SetNewPassword struct {
@@ -25,8 +26,8 @@ type SetNewPassword struct {
 	NewPassword string `json:"new_password" binding:"required"`
 }
 
-func NewResetPasswordHandler(usersRepo *repositories.UsersRepository) *ResetPasswordHandler {
-	return &ResetPasswordHandler{usersRepo: usersRepo}
+func NewResetPasswordHandler(authRepo *repositories.AuthRepository, usersRepo *repositories.UsersRepository) *ResetPasswordHandler {
+	return &ResetPasswordHandler{authRepo: authRepo, usersRepo: usersRepo}
 }
 
 // ResetPassword — обработчик для запроса сброса пароля
@@ -64,7 +65,7 @@ func (h *ResetPasswordHandler) ResetPassword(c *gin.Context) {
     expirationTime := time.Now().Add(30 * time.Minute)
 
     // Сохраняем токен в БД
-    if err := h.usersRepo.SetResetToken(c.Request.Context(), request.Email, resetToken, expirationTime); err != nil {
+    if err := h.authRepo.SetResetToken(c.Request.Context(), request.Email, resetToken, expirationTime); err != nil {
         logger.Error("Failed to save reset token", 
             zap.Int("user_id", user.Id), 
             zap.Error(err))
@@ -105,7 +106,7 @@ func (h *ResetPasswordHandler) SetNewPassword(c *gin.Context) {
     logger.Info("Attempt to set new password", zap.String("reset_token", req.ResetToken))
 
     // Пытаемся найти пользователя по reset токену
-    user, err := h.usersRepo.GetUserByResetToken(c.Request.Context(), req.ResetToken)
+    user, err := h.authRepo.GetUserByResetToken(c.Request.Context(), req.ResetToken)
     if err != nil {
         logger.Warn("Invalid reset token attempt", zap.String("reset_token", req.ResetToken))
         c.JSON(http.StatusUnauthorized, models.NewApiError("invalid or expired reset token"))
@@ -124,7 +125,7 @@ func (h *ResetPasswordHandler) SetNewPassword(c *gin.Context) {
     }
 
     // Обновляем пароль пользователя в базе данных
-    if err := h.usersRepo.UpdatePassword(c.Request.Context(), user.Id, hashedPassword); err != nil {
+    if err := h.authRepo.UpdatePassword(c.Request.Context(), user.Id, hashedPassword); err != nil {
         logger.Error("Failed to update password", 
             zap.Int("user_id", user.Id), 
             zap.Error(err))
@@ -133,7 +134,7 @@ func (h *ResetPasswordHandler) SetNewPassword(c *gin.Context) {
     }
 
     // Удаляем reset токен после успешного изменения пароля
-    if err := h.usersRepo.ClearResetToken(c.Request.Context(), user.Id); err != nil {
+    if err := h.authRepo.ClearResetToken(c.Request.Context(), user.Id); err != nil {
         logger.Error("Failed to clear reset token", 
             zap.Int("user_id", user.Id), 
             zap.Error(err))

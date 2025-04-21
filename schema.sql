@@ -53,3 +53,4 @@ CREATE TABLE public.sessions (
     refresh_token text NOT NULL UNIQUE,
     expires_at timestamp without time zone NOT NULL
 );
+

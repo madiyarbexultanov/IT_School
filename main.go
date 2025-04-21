@@ -72,7 +72,8 @@ func main() {
 		})
 	})
 
-	usersRepository := repositories.NewUsersRepository(conn)
+	AuthRepository := repositories.NewAuthRepository(conn)
+	UsersRepository := repositories.NewRUsersRepository(conn)
 	SessionsRepository := repositories.NewSessionsRepository(conn)
 	RolesRepository := repositories.NewRoleRepository(conn)
 
@@ -81,14 +82,15 @@ func main() {
 	StudentsHandlers := handlers.NewStudentsHandlers(StudentsRepository)
 	LessonsHandlers := handlers.NewLessonsHandlers(LessonsRepository)
 
-	authHandler := handlers.NewAuthHandler(usersRepository, SessionsRepository, RolesRepository)
-	resetPasswordHandler := handlers.NewResetPasswordHandler(usersRepository)
+
+	authHandler := handlers.NewAuthHandler(UsersRepository, SessionsRepository, RolesRepository)
+	UserHandler := handlers.NewUserHandlers(UsersRepository)
+	resetPasswordHandler := handlers.NewResetPasswordHandler(AuthRepository, UsersRepository)
 
 	// Маршруты для аутентификации
 	authGroup := r.Group("/auth")
 	{
 		authGroup.POST("/login", authHandler.Login)
-		authGroup.POST("/signup", authHandler.SignUp)
 		authGroup.POST("/logout", authHandler.Logout)
 		authGroup.POST("/refresh", authHandler.Refresh)
 
@@ -96,35 +98,38 @@ func main() {
 		authGroup.POST("/new-password", resetPasswordHandler.SetNewPassword)
 	}
 
-	//http://localhost:8081/students/
-	r.POST("/students", StudentsHandlers.Create)
-	r.GET("/students/:studentId", StudentsHandlers.FindById)
-	r.PUT("/students/:studentId", StudentsHandlers.Update)
-	r.GET("/students", StudentsHandlers.FindAll)
-	r.DELETE("/students/:studentId", StudentsHandlers.Delete)
-
-	//http://localhost:8081/lessons/
-	r.POST("/lessons", LessonsHandlers.Create)
-	r.GET("/lessons/:lessonsId", LessonsHandlers.FindById)
-	r.GET("/lessons", LessonsHandlers.FindAll)
-	r.PUT("/lessons/:lessonsId", LessonsHandlers.Update)
-	r.DELETE("/lessons/:lessonsId", LessonsHandlers.Delete)
-
 	// Приватные маршруты (требуют аутентификацию)
 	privateRoutes := r.Group("/")
-	privateRoutes.Use(middlewares.AuthMiddleware(SessionsRepository, usersRepository, RolesRepository))
+	privateRoutes.Use(middlewares.AuthMiddleware(SessionsRepository, UsersRepository, RolesRepository))
 
-	// // Доступ к настройкам только у Директора
-	// privateRoutes.GET("/settings", middlewares.PermissionMiddleware("access_settings"), _)
+	settingsRoutes := privateRoutes.Group("/settings")
+	settingsRoutes.Use(middlewares.PermissionMiddleware("access_settings"))
 
-	// // Доступ к курсам только у Куратора
-	// privateRoutes.GET("/courses", middlewares.PermissionMiddleware("access_courses"), _)
 
-	// // Доступ к ученикам только у Куратора
-	// privateRoutes.GET("/students", middlewares.PermissionMiddleware("access_students"), _)
+	// Роуты для работы со студентами внутри настроек
+	settingsRoutes.POST("/students", StudentsHandlers.Create)
+	settingsRoutes.GET("/students/:studentId", StudentsHandlers.FindById)
+	settingsRoutes.PUT("/students/:studentId", StudentsHandlers.Update)
+	settingsRoutes.GET("/students", StudentsHandlers.FindAll)
+	settingsRoutes.DELETE("/students/:studentId", StudentsHandlers.Delete)
 
-	// // Доступ к урокам только у Менеджера
-	// privateRoutes.GET("/lessons", middlewares.PermissionMiddleware("access_lessons"), _)
+	// Роуты для работы с уроками внутри настроек
+	settingsRoutes.POST("/lessons", LessonsHandlers.Create)
+	settingsRoutes.GET("/lessons/:lessonsId", LessonsHandlers.FindById)
+	settingsRoutes.GET("/lessons", LessonsHandlers.FindAll)
+	settingsRoutes.PUT("/lessons/:lessonsId", LessonsHandlers.Update)
+	settingsRoutes.DELETE("/lessons/:lessonsId", LessonsHandlers.Delete)
+
+	// Роуты для работы с пользователями внутри настроек
+	settingsRoutes.POST("/users", UserHandler.Create)
+	settingsRoutes.GET("/users/:userId", UserHandler.FindById)
+	settingsRoutes.GET("/users", UserHandler.FindAll)
+	settingsRoutes.PUT("/users/:userId", UserHandler.Update)
+	settingsRoutes.DELETE("/users/:userId", UserHandler.Delete)
+
+	settingsRoutes.GET("/managers", UserHandler.FindManagers)
+
+	settingsRoutes.GET("/curators", UserHandler.FindCurators)
 
 
 	docs.SwaggerInfo.BasePath = "/"
@@ -137,7 +142,7 @@ func main() {
 
 	port := viper.GetString("PORT")
 	if port == "" {
-		port = "8080"
+		port = "8081"
 	}
 
 	logger.Info("Starting on port:", zap.String("port", port))
@@ -145,8 +150,6 @@ func main() {
 	if err := r.Run("0.0.0.0:" + port); err != nil {
 		logger.Fatal("Server failed to start", zap.Error(err))
 	}
-
-
 }
 
 func loadConfig() error {
