@@ -18,3 +18,10 @@ type Student struct {
 	CrmLink           string     `json:"crm_link"`
 	CreatedAt         *time.Time `json:"created_at"`
 }
+
+type StudentFilters struct {
+	Search     string
+	Course     string
+	IsActive   string
+	CuratorId  string
+}

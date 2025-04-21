@@ -35,55 +35,6 @@ func NewAuthHandler(usersRepo *repositories.UsersRepository, sessionsRepo *repos
 	}
 }
 
-func (h *AuthHandler) SignUp(c *gin.Context) {
-	var req AuthRequest
-
-	// Валидация запроса
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request data"})
-		return
-	}
-
-	// Проверяем, есть ли уже такой email
-	_, err := h.usersRepo.FindByEmail(c, req.Email)
-	if err == nil {
-		c.JSON(http.StatusConflict, gin.H{"error": "Email already exists"})
-		return
-	}
-
-	// Хешируем пароль
-	hashedPassword, err := utils.HashPassword(req.Password)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})
-		return
-	}
-
-	// По умолчанию присваиваем роль "admin"
-	defaultRoleID := 1
-
-	// Создаем пользователя
-	newUser := models.User{
-		Email:        req.Email,
-		PasswordHash: hashedPassword,
-		RoleID:       defaultRoleID,
-	}
-
-	userID, err := h.usersRepo.CreateUser(c, newUser)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user"})
-		return
-	}
-
-	// Генерируем JWT-токен
-	token, err := h.generateJWTToken(c.Request.Context(), userID, defaultRoleID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
-		return
-	}
-
-	c.JSON(http.StatusCreated, gin.H{"token": token})
-}
-
 func (h *AuthHandler) Login(c *gin.Context) {
     logger := logger.GetLogger()
     var req AuthRequest
