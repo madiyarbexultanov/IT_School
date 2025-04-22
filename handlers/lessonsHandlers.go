@@ -42,6 +42,17 @@ func NewLessonsHandlers(LessonsRepo *repositories.LessonsRepository) *LessonsHan
 	}
 }
 
+// Create godoc
+// @Summary Создать урок
+// @Description Создает новый урок для студента по курсу
+// @Tags lessons
+// @Accept json
+// @Produce json
+// @Param request body createLessonsrequest true "Данные урока"
+// @Success 200 {object} map[string]string
+// @Failure 400 {object} models.ApiError
+// @Failure 500 {object} models.ApiError
+// @Router /lessons [post]
 func (h *LessonsHandlers) Create(c *gin.Context) {
 	var request createLessonsrequest
 	err := c.Bind(&request)
@@ -90,6 +101,17 @@ func (h *LessonsHandlers) Create(c *gin.Context) {
 	})
 }
 
+// Create godoc
+// @Summary Создать урок
+// @Description Создает новый урок для студента по курсу
+// @Tags lessons
+// @Accept json
+// @Produce json
+// @Param request body createLessonsrequest true "Данные урока"
+// @Success 200 {object} map[string]string
+// @Failure 400 {object} models.ApiError
+// @Failure 500 {object} models.ApiError
+// @Router /lessons [post]
 func (h *LessonsHandlers) FindById(c *gin.Context) {
 	idStr := c.Param("lessonsId")
 	lessonsId, err := uuid.Parse(idStr)
@@ -106,6 +128,16 @@ func (h *LessonsHandlers) FindById(c *gin.Context) {
 	c.JSON(http.StatusOK, lessons)
 }
 
+// FindAll godoc
+// @Summary Получить все уроки
+// @Description Возвращает список всех уроков с фильтрацией
+// @Tags lessons
+// @Produce json
+// @Param payment_status query string false "Статус оплаты"
+// @Param lessons_status query string false "Статус урока"
+// @Success 200 {array} models.Lessons
+// @Failure 500 {object} models.ApiError
+// @Router /lessons [get]
 func (h *LessonsHandlers) FindAll(c *gin.Context) {
 	filters := models.LessonsFilters{
 		PaymentStatus: c.Query("payment_status"),
@@ -119,6 +151,18 @@ func (h *LessonsHandlers) FindAll(c *gin.Context) {
 	c.JSON(http.StatusOK, lessons)
 }
 
+// Update godoc
+// @Summary Обновить урок
+// @Description Обновляет данные урока по ID
+// @Tags lessons
+// @Accept json
+// @Produce json
+// @Param lessonsId path string true "ID урока"
+// @Param request body updateLessonsrequest true "Обновлённые данные урока"
+// @Success 200
+// @Failure 400 {object} models.ApiError
+// @Failure 500 {object} models.ApiError
+// @Router /lessons/{lessonsId} [put]
 func (h *LessonsHandlers) Update(c *gin.Context) {
 	idStr := c.Param("lessonsId")
 	lessonsId, err := uuid.Parse(idStr)
@@ -179,6 +223,15 @@ func (h *LessonsHandlers) Update(c *gin.Context) {
 	c.Status(http.StatusOK)
 }
 
+// Delete godoc
+// @Summary Удалить урок
+// @Description Удаляет урок по ID
+// @Tags lessons
+// @Produce json
+// @Param lessonsId path string true "ID урока"
+// @Success 200
+// @Failure 400 {object} models.ApiError
+// @Router /lessons/{lessonsId} [delete]
 func (h *LessonsHandlers) Delete(c *gin.Context) {
 	idStr := c.Param("lessonsId")
 	lessonsId, err := uuid.Parse(idStr)

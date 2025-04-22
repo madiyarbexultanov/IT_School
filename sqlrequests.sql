@@ -58,15 +58,35 @@ _____________________________________________________________________
 //POST lk
 /* localhost:8081/students */
 {
-    "full_name": "Молдир Берикканова",
-    "phone_number": "+77086108823",
-    "parent_name": "Анна Берикканова",
+    "course_id": "c3ad5757-27be-4958-bc63-d9d20a4c53c6",
+    "full_name": "Test",
+    "phone_number": "+7 702 123 45 67",
+    "parent_name": "Test Parents",
     "parent_phone_number": "+77081234567",
     "courses": ["math", "physics", "chemistry"],
     "platform_link": "https://platform.example.com",
     "crm_link": "https://crm.example.com",
     "created_at": "27.03.2025"
+    "is_active":"неактивен"
   }
+
+
+
+
+
 
 //доработка таблицы уроков
 alter table lessons add column course_id UUID REFERENCES courses(id) ON DELETE CASCADE
+
+
+//добавление графы is_active в students 
+alter table students add column is_active is_active
+
+//добавила тип is_active
+CREATE TYPE is_active AS ENUM ('активен', 'неактивен');
+
+//доработка таблицы students
+alter table students add column course_id UUID REFERENCES courses(id) ON DELETE CASCADE
+
+
+

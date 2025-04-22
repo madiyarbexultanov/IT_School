@@ -23,10 +23,11 @@ func (r *StudentsRepository) Create(c context.Context, student models.Student) (
 	l := logger.GetLogger()
 	student.Id = uuid.New()
 
-	row := r.db.QueryRow(c, `INSERT INTO students(id, full_name, phone_number, parent_name, parent_phone_number, curator_id, courses, platform_link, crm_link, created_at) 
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) 
+	row := r.db.QueryRow(c, `INSERT INTO students(id, course_id, full_name, phone_number, parent_name, parent_phone_number, curator_id, courses, platform_link, crm_link, created_at) 
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) 
     RETURNING id`,
 		student.Id,
+		student.CourseId,
 		student.FullName,
 		student.PhoneNumber,
 		student.ParentName,
@@ -49,7 +50,8 @@ func (r *StudentsRepository) Create(c context.Context, student models.Student) (
 
 func (r *StudentsRepository) FindAll(c context.Context, filters models.StudentFilters) ([]models.Student, error) {
 	sql := `SELECT 
-	s.id, 
+	s.id,
+	s.course_id, 
 	s.full_name, 
 	s.phone_number, 
 	s.parent_name, 
@@ -58,7 +60,8 @@ func (r *StudentsRepository) FindAll(c context.Context, filters models.StudentFi
 	s.courses, 
 	s.platform_link, 
 	s.crm_link, 
-	s.created_at 
+	s.created_at,
+	s.is_active
 	FROM students s where 1=1`
 
 	params := pgx.NamedArgs{}
@@ -96,6 +99,7 @@ func (r *StudentsRepository) FindAll(c context.Context, filters models.StudentFi
 		var student models.Student
 		err := rows.Scan(
 			&student.Id,
+			&student.CourseId,
 			&student.FullName,
 			&student.PhoneNumber,
 			&student.ParentName,
@@ -105,6 +109,7 @@ func (r *StudentsRepository) FindAll(c context.Context, filters models.StudentFi
 			&student.PlatformLink,
 			&student.CrmLink,
 			&student.CreatedAt,
+			&student.IsActive,
 		)
 		if err != nil {
 			return nil, err
@@ -117,6 +122,7 @@ func (r *StudentsRepository) FindAll(c context.Context, filters models.StudentFi
 func (r *StudentsRepository) FindById(c context.Context, studentId uuid.UUID) (models.Student, error) {
 	sql := `SELECT 
 			s.id, 
+			s.course_id,
 			s.full_name, 
 			s.phone_number, 
 			s.parent_name, 
@@ -125,7 +131,8 @@ func (r *StudentsRepository) FindById(c context.Context, studentId uuid.UUID) (m
 			s.courses, 
 			s.platform_link, 
 			s.crm_link, 
-			s.created_at 
+			s.created_at,
+			s.is_active 
 			FROM students s
 			WHERE s.id = $1`
 
@@ -134,6 +141,7 @@ func (r *StudentsRepository) FindById(c context.Context, studentId uuid.UUID) (m
 	row := r.db.QueryRow(c, sql, studentId)
 	err := row.Scan(
 		&studentId,
+		&student.CourseId,
 		&student.FullName,
 		&student.PhoneNumber,
 		&student.ParentName,
@@ -143,6 +151,7 @@ func (r *StudentsRepository) FindById(c context.Context, studentId uuid.UUID) (m
 		&student.PlatformLink,
 		&student.CrmLink,
 		&student.CreatedAt,
+		&student.IsActive,
 	)
 	if err != nil {
 		l.Error("Ошибка запроса к базе", zap.String("db_msg", err.Error()))
@@ -170,16 +179,19 @@ func (r *StudentsRepository) Update(c context.Context, updateStudents models.Stu
 	_, err = tx.Exec(c, `
 	UPDATE students
 	SET 
-		full_name = $1,
-		phone_number = $2,
-		parent_name = $3,
-		parent_phone_number = $4,
-		curator_id = $5,
-		courses = $6,
-		platform_link = $7,
-		crm_link = $8,
-		created_at = $9
-	WHERE id = $10`,
+		course_id = $1,
+		full_name = $2,
+		phone_number = $3,
+		parent_name = $4,
+		parent_phone_number = $5,
+		curator_id = $6,
+		courses = $7,
+		platform_link = $8,
+		crm_link = $9,
+		created_at = $10,
+		is_active = $11
+	WHERE id = $12`,
+		updateStudents.CourseId,
 		updateStudents.FullName,
 		updateStudents.PhoneNumber,
 		updateStudents.ParentName,
@@ -189,6 +201,7 @@ func (r *StudentsRepository) Update(c context.Context, updateStudents models.Stu
 		updateStudents.PlatformLink,
 		updateStudents.CrmLink,
 		updateStudents.CreatedAt,
+		updateStudents.IsActive,
 		updateStudents.Id)
 
 	if err != nil {
