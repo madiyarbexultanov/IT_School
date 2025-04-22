@@ -6,6 +6,7 @@ import (
 	"it_school/models"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"go.uber.org/zap"
 )
@@ -46,7 +47,7 @@ func (r *StudentsRepository) Create(c context.Context, student models.Student) (
 	return student.Id, nil
 }
 
-func (r *StudentsRepository) FindAll(c context.Context) ([]models.Student, error) {
+func (r *StudentsRepository) FindAll(c context.Context, filters models.StudentFilters) ([]models.Student, error) {
 	sql := `SELECT 
 	s.id, 
 	s.full_name, 
@@ -58,9 +59,32 @@ func (r *StudentsRepository) FindAll(c context.Context) ([]models.Student, error
 	s.platform_link, 
 	s.crm_link, 
 	s.created_at 
-	FROM students s`
+	FROM students s where 1=1`
 
-	rows, err := r.db.Query(c, sql)
+	params := pgx.NamedArgs{}
+
+	if filters.Search != "" {
+		sql += " AND (s.full_name ILIKE @search OR s.email ILIKE @search)"
+		params["search"] = "%" + filters.Search + "%"
+	}
+
+	if filters.Course != "" {
+		sql += " AND @course = ANY(s.courses)"
+		params["course"] = filters.Course
+	}
+
+	if filters.IsActive != "" {
+		sql += " AND s.is_active = @is_active"
+		isActive := filters.IsActive == "true"
+		params["is_active"] = isActive
+	}
+
+	if filters.CuratorId != "" {
+		sql += " AND s.curator_id = @curator_id"
+		params["curator_id"] = filters.CuratorId
+	}
+
+	rows, err := r.db.Query(c, sql, params)
 	defer rows.Close()
 	if err != nil {
 		return nil, err

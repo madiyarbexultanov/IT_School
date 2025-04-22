@@ -6,22 +6,34 @@ import (
 	"it_school/docs"
 	"it_school/handlers"
 	"it_school/logger"
+	"it_school/middlewares"
 	"it_school/repositories"
 	"time"
 
-	"github.com/gin-contrib/cors"
-	ginzap "github.com/gin-contrib/zap"
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/spf13/viper"
+
+	"github.com/gin-contrib/cors"
+
+	ginzap "github.com/gin-contrib/zap"
 	swaggerfiles "github.com/swaggo/files"
 	swagger "github.com/swaggo/gin-swagger"
+	"go.uber.org/zap"
 )
 
 func main() {
-	r := gin.Default()
+	gin.SetMode(gin.ReleaseMode)
+	r := gin.New()
 
 	logger := logger.GetLogger()
+
+	defer func() {
+		if r := recover(); r != nil {
+			logger.Error("Application crashed!", zap.Any("error", r))
+		}
+	}()
+
 	r.Use(
 		ginzap.Ginzap(logger, time.RFC3339, true),
 		ginzap.RecoveryWithZap(logger, true),
@@ -32,69 +44,124 @@ func main() {
 		AllowHeaders:    []string{"*"},
 		AllowMethods:    []string{"*"},
 	}
+
 	r.Use(cors.New(corsConfig))
 
+	logger.Info("Loading configuration...")
 	err := loadConfig()
 	if err != nil {
-		panic(err)
+		logger.Fatal("Failed to load config", zap.Error(err))
 	}
 
+	logger.Info("Connecting to database...")
 	conn, err := connectToDb()
 	if err != nil {
-		panic(err)
+		logger.Fatal("Database connection failed", zap.Error(err))
 	}
+
+	r.Use(func(c *gin.Context) {
+		c.Set("db", conn)
+		c.Next()
+	})
+
+	// Health-check для Railway
+	r.GET("/", func(c *gin.Context) {
+		c.JSON(200, gin.H{
+			"message": "Server is running!",
+		})
+	})
+
+	AuthRepository := repositories.NewAuthRepository(conn)
+	UsersRepository := repositories.NewRUsersRepository(conn)
+	SessionsRepository := repositories.NewSessionsRepository(conn)
+	RolesRepository := repositories.NewRoleRepository(conn)
 
 	StudentsRepository := repositories.NewStudentsRepository(conn)
 	LessonsRepository := repositories.NewLessonsRepository(conn)
 	CourseRepository := repositories.NewCourseRepository(conn)
 	StudentsHandlers := handlers.NewStudentsHandlers(StudentsRepository)
 	LessonsHandlers := handlers.NewLessonsHandlers(LessonsRepository)
-	CoursesHandlers := handlers.NewCourseHandlers(CourseRepository)
 
-	// authorized := r.Group("")
-	// authorized.Use(middlewares.AuthMiddleware)
+	authHandler := handlers.NewAuthHandler(UsersRepository, SessionsRepository, RolesRepository)
+	UserHandler := handlers.NewUserHandlers(UsersRepository)
+	resetPasswordHandler := handlers.NewResetPasswordHandler(AuthRepository, UsersRepository)
 
-	// admin := r.Group("/admin")
-	// admin.Use(middlewares.AuthMiddleware)
+	// Маршруты для аутентификации
+	authGroup := r.Group("/auth")
+	{
+		authGroup.POST("/login", authHandler.Login)
+		authGroup.POST("/logout", authHandler.Logout)
+		authGroup.POST("/refresh", authHandler.Refresh)
 
-	//endpoints
+		authGroup.POST("/reset-password", resetPasswordHandler.ResetPassword)
+		authGroup.POST("/new-password", resetPasswordHandler.SetNewPassword)
+	}
 
-	//http://localhost:8081/students/
-	r.POST("/students", StudentsHandlers.Create)
-	r.GET("/students/:studentId", StudentsHandlers.FindById)
-	r.PUT("/students/:studentId", StudentsHandlers.Update)
-	r.GET("/students", StudentsHandlers.FindAll)
-	r.DELETE("/students/:studentId", StudentsHandlers.Delete)
+	// Приватные маршруты (требуют аутентификацию)
+	privateRoutes := r.Group("/")
+	privateRoutes.Use(middlewares.AuthMiddleware(SessionsRepository, UsersRepository, RolesRepository))
 
-	//http://localhost:8081/lessons/
-	r.POST("/lessons", LessonsHandlers.Create)
-	r.GET("/lessons/:lessonsId", LessonsHandlers.FindById)
-	r.GET("/lessons", LessonsHandlers.FindAll)
-	r.PUT("/lessons/:lessonsId", LessonsHandlers.Update)
-	r.DELETE("/lessons/:lessonsId", LessonsHandlers.Delete)
+	settingsRoutes := privateRoutes.Group("/settings")
+	settingsRoutes.Use(middlewares.PermissionMiddleware("access_settings"))
 
-	//http://localhost:8081/courses
-	r.POST("/courses", CoursesHandlers.Create)
-	r.GET("/courses/:courseId", CoursesHandlers.FindById)
-	r.GET("/courses", CoursesHandlers.FindAll)
-	r.PUT("/courses/:courseId", CoursesHandlers.Update)
-	r.DELETE("/courses/:courseId", CoursesHandlers.Delete)
+	// Роуты для работы со студентами внутри настроек
+	settingsRoutes.POST("/students", StudentsHandlers.Create)
+	settingsRoutes.GET("/students/:studentId", StudentsHandlers.FindById)
+	settingsRoutes.PUT("/students/:studentId", StudentsHandlers.Update)
+	settingsRoutes.GET("/students", StudentsHandlers.FindAll)
+	settingsRoutes.DELETE("/students/:studentId", StudentsHandlers.Delete)
+
+	// Роуты для работы с уроками внутри настроек
+	settingsRoutes.POST("/lessons", LessonsHandlers.Create)
+	settingsRoutes.GET("/lessons/:lessonsId", LessonsHandlers.FindById)
+	settingsRoutes.GET("/lessons", LessonsHandlers.FindAll)
+	settingsRoutes.PUT("/lessons/:lessonsId", LessonsHandlers.Update)
+	settingsRoutes.DELETE("/lessons/:lessonsId", LessonsHandlers.Delete)
+
+	// Роуты для работы с пользователями внутри настроек
+	settingsRoutes.POST("/users", UserHandler.Create)
+	settingsRoutes.GET("/users/:userId", UserHandler.FindById)
+	settingsRoutes.GET("/users", UserHandler.FindAll)
+	settingsRoutes.PUT("/users/:userId", UserHandler.Update)
+	settingsRoutes.DELETE("/users/:userId", UserHandler.Delete)
+
+	settingsRoutes.GET("/managers", UserHandler.FindManagers)
+
+	settingsRoutes.GET("/curators", UserHandler.FindCurators)
 
 	docs.SwaggerInfo.BasePath = "/"
 	r.GET("/swagger/*any", swagger.WrapHandler(swaggerfiles.Handler))
 
 	logger.Info("Application starting...")
-	r.Run(config.Config.AppHost)
-}
-func loadConfig() error {
-	viper.SetConfigFile(".env")
-	err := viper.ReadInConfig()
-	if err != nil {
-		return err
+	for _, route := range r.Routes() {
+		logger.Info("Registered route", zap.String("method", route.Method), zap.String("path", route.Path))
 	}
 
+	port := viper.GetString("PORT")
+	if port == "" {
+		port = "8081"
+	}
+
+	logger.Info("Starting on port:", zap.String("port", port))
+
+	if err := r.Run("0.0.0.0:" + port); err != nil {
+		logger.Fatal("Server failed to start", zap.Error(err))
+	}
+}
+
+func loadConfig() error {
+	// Указываем путь к .env файлу
+	viper.SetConfigFile(".env")
+
+	// Загружаем переменные из .env, если он есть (необязательно)
+	_ = viper.ReadInConfig() // не падаем, если файла нет
+
+	// Читаем переменные окружения (например, из Railway)
+	viper.AutomaticEnv()
+
+	// Мапим переменные в структуру
 	var mapConfig config.MapConfig
-	err = viper.Unmarshal(&mapConfig)
+	err := viper.Unmarshal(&mapConfig)
 	if err != nil {
 		return err
 	}
@@ -102,6 +169,7 @@ func loadConfig() error {
 	config.Config = &mapConfig
 	return nil
 }
+
 func connectToDb() (*pgxpool.Pool, error) {
 	conn, err := pgxpool.New(context.Background(), "postgres://postgres:123456@localhost:5432/it_school")
 	if err != nil {
@@ -112,6 +180,5 @@ func connectToDb() (*pgxpool.Pool, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	return conn, nil
 }
