@@ -78,7 +78,6 @@ func main() {
 
 	StudentsRepository := repositories.NewStudentsRepository(conn)
 	LessonsRepository := repositories.NewLessonsRepository(conn)
-	CourseRepository := repositories.NewCourseRepository(conn)
 	StudentsHandlers := handlers.NewStudentsHandlers(StudentsRepository)
 	LessonsHandlers := handlers.NewLessonsHandlers(LessonsRepository)
 
