@@ -2,9 +2,9 @@ package handlers
 
 import (
 	"fmt"
-	"net/http"
 	"it_school/models"
 	"it_school/repositories"
+	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -70,6 +70,16 @@ func formatPhoneNumber(input string, defaultRegion string) (string, error) {
 	return phonenumbers.Format(num, phonenumbers.INTERNATIONAL), nil
 }
 
+// @Summary Create new students
+// @Description Создание студента с курсами, номерами телефонов и ссылками
+// @Tags Students
+// @Accept json
+// @Produce json
+// @Param student body createStudentRequest true "Информация о студенте"
+// @Success 200 {object} map[string]string "id студента"
+// @Failure 400 {object} models.ApiError
+// @Failure 500 {object} models.ApiError
+// @Router /students [post]
 func (h *StudentsHandlers) Create(c *gin.Context) {
 	var request createStudentRequest
 	err := c.Bind(&request)
@@ -117,6 +127,14 @@ func (h *StudentsHandlers) Create(c *gin.Context) {
 	})
 }
 
+// @Summary Найти студента по ID
+// @Description Получение информации о студенте по UUID
+// @Tags Students
+// @Produce json
+// @Param studentId path string true "ID студента"
+// @Success 200 {object} models.Student
+// @Failure 400 {object} models.ApiError
+// @Router /students/{studentId} [get]
 func (h *StudentsHandlers) FindById(c *gin.Context) {
 	idStr := c.Param("studentId")
 	studentId, err := uuid.Parse(idStr)
@@ -133,6 +151,16 @@ func (h *StudentsHandlers) FindById(c *gin.Context) {
 	c.JSON(http.StatusOK, Students)
 }
 
+// @Summary Обновить данные студента
+// @Description Обновление информации о студенте по UUID
+// @Tags Students
+// @Accept json
+// @Param studentId path string true "ID студента"
+// @Param student body updateStudentRequest true "Обновлённые данные студента"
+// @Success 200
+// @Failure 400 {object} models.ApiError
+// @Failure 500 {object} models.ApiError
+// @Router /students/{studentId} [put]
 func (h *StudentsHandlers) Update(c *gin.Context) {
 	idStr := c.Param("studentId")
 	studentId, err := uuid.Parse(idStr)
@@ -191,6 +219,17 @@ func (h *StudentsHandlers) Update(c *gin.Context) {
 	c.Status(http.StatusOK)
 }
 
+// @Summary Получить список студентов
+// @Description Список студентов с фильтрами по имени, курсу, активности и куратору
+// @Tags Students
+// @Produce json
+// @Param search query string false "Поиск по имени"
+// @Param course query string false "Фильтр по курсу"
+// @Param is_active query string false "Фильтр по активности"
+// @Param curator_id query string false "ID куратора"
+// @Success 200 {array} models.Student
+// @Failure 500
+// @Router /students [get]
 func (h *StudentsHandlers) FindAll(c *gin.Context) {
 
 	filters := models.StudentFilters{
@@ -208,6 +247,13 @@ func (h *StudentsHandlers) FindAll(c *gin.Context) {
 	c.JSON(http.StatusOK, Seasons)
 }
 
+// @Summary Удалить студента
+// @Description Удаление студента по UUID
+// @Tags Students
+// @Param studentId path string true "ID студента"
+// @Success 200
+// @Failure 400 {object} models.ApiError
+// @Router /students/{studentId} [delete]
 func (h *StudentsHandlers) Delete(c *gin.Context) {
 	idStr := c.Param("studentId")
 	studentId, err := uuid.Parse(idStr)

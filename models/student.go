@@ -17,11 +17,12 @@ type Student struct {
 	PlatformLink      string     `json:"platform_link"`
 	CrmLink           string     `json:"crm_link"`
 	CreatedAt         *time.Time `json:"created_at"`
+	IsActive          *string    `json:"is_active"`
 }
 
 type StudentFilters struct {
-	Search     string
-	Course     string
-	IsActive   string
-	CuratorId  string
+	Search    string
+	Course    string
+	IsActive  string
+	CuratorId string
 }

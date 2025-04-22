@@ -70,3 +70,7 @@ _____________________________________________________________________
 
 //доработка таблицы уроков
 alter table lessons add column course_id UUID REFERENCES courses(id) ON DELETE CASCADE
+
+
+//добавление графы is_active в students 
+alter table students add column is_active 
