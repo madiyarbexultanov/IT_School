@@ -46,7 +46,6 @@ func main() {
 	}
 
 	r.Use(cors.New(corsConfig))
-	
 
 	logger.Info("Loading configuration...")
 	err := loadConfig()
@@ -82,7 +81,6 @@ func main() {
 	StudentsHandlers := handlers.NewStudentsHandlers(StudentsRepository)
 	LessonsHandlers := handlers.NewLessonsHandlers(LessonsRepository)
 
-
 	authHandler := handlers.NewAuthHandler(UsersRepository, SessionsRepository, RolesRepository)
 	UserHandler := handlers.NewUserHandlers(UsersRepository)
 	resetPasswordHandler := handlers.NewResetPasswordHandler(AuthRepository, UsersRepository)
@@ -104,7 +102,6 @@ func main() {
 
 	settingsRoutes := privateRoutes.Group("/settings")
 	settingsRoutes.Use(middlewares.PermissionMiddleware("access_settings"))
-
 
 	// Роуты для работы со студентами внутри настроек
 	settingsRoutes.POST("/students", StudentsHandlers.Create)
@@ -131,7 +128,6 @@ func main() {
 
 	settingsRoutes.GET("/curators", UserHandler.FindCurators)
 
-
 	docs.SwaggerInfo.BasePath = "/"
 	r.GET("/swagger/*any", swagger.WrapHandler(swaggerfiles.Handler))
 
@@ -146,7 +142,7 @@ func main() {
 	}
 
 	logger.Info("Starting on port:", zap.String("port", port))
-	
+
 	if err := r.Run("0.0.0.0:" + port); err != nil {
 		logger.Fatal("Server failed to start", zap.Error(err))
 	}
@@ -173,10 +169,8 @@ func loadConfig() error {
 	return nil
 }
 
-
-
 func connectToDb() (*pgxpool.Pool, error) {
-	conn, err := pgxpool.New(context.Background(), config.Config.DbConnectionString)
+	conn, err := pgxpool.New(context.Background(), "postgres://postgres:123456@localhost:5432/it_school")
 	if err != nil {
 		return nil, err
 	}
