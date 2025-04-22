@@ -1,9 +1,9 @@
 package handlers
 
 import (
-	"net/http"
 	"it_school/models"
 	"it_school/repositories"
+	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -11,17 +11,19 @@ import (
 )
 
 type createLessonsrequest struct {
-	StudentId     uuid.UUID `json:"student_id"`
-	Date          *string   `json:"date"`
-	Feedback      string    `json:"feedback"`
-	PaymentStatus string    `json:"payment_status"`
-	LessonsStatus string    `json:"lessons_status"`
-	FeedbackDate  *string   `json:"feedback_date"`
-	CreatedAt     *string   `json:"created_at"`
+	StudentId uuid.UUID `json:"student_id"`
+	CourseId  uuid.UUID `json:"course_id"`
+	Date      *string   `json:"date"`
+	Feedback  string    `json:"feedback"`
+	// PaymentStatus string    `json:"payment_status"`
+	// LessonsStatus string    `json:"lessons_status"`
+	FeedbackDate *string `json:"feedback_date"`
+	CreatedAt    *string `json:"created_at"`
 }
 
 type updateLessonsrequest struct {
 	StudentId     uuid.UUID `json:"student_id"`
+	CourseId      uuid.UUID `json:"course_id"`
 	Date          *string   `json:"date"`
 	Feedback      string    `json:"feedback"`
 	PaymentStatus string    `json:"payment_status"`
@@ -56,24 +58,25 @@ func (h *LessonsHandlers) Create(c *gin.Context) {
 
 	feedbackdate, err := time.Parse("02.01.2006", *request.FeedbackDate)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewApiError("Invalid created date format. Use DD.MM.YYYY"))
+		c.JSON(http.StatusBadRequest, models.NewApiError("Invalid created feedbackdate format. Use DD.MM.YYYY"))
 		return
 	}
 
 	createdAt, err := time.Parse("02.01.2006", *request.CreatedAt)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewApiError("Invalid created date format. Use DD.MM.YYYY"))
+		c.JSON(http.StatusBadRequest, models.NewApiError("Invalid created createdAt format. Use DD.MM.YYYY"))
 		return
 	}
 
 	lessons := models.Lessons{
-		StudentId:     request.StudentId,
-		Date:          &date,
-		Feedback:      request.Feedback,
-		PaymentStatus: request.PaymentStatus,
-		LessonsStatus: request.LessonsStatus,
-		FeedbackDate:  &feedbackdate,
-		CreatedAt:     &createdAt,
+		StudentId: request.StudentId,
+		CourseId:  request.CourseId,
+		Date:      &date,
+		Feedback:  request.Feedback,
+		// PaymentStatus: request.PaymentStatus,
+		// LessonsStatus: request.LessonsStatus,
+		FeedbackDate: &feedbackdate,
+		CreatedAt:    &createdAt,
 	}
 
 	id, err := h.LessonsRepo.Create(c, lessons)
@@ -156,11 +159,13 @@ func (h *LessonsHandlers) Update(c *gin.Context) {
 	}
 
 	lessons = models.Lessons{
+		Id:            lessonsId,
 		StudentId:     request.StudentId,
+		CourseId:      request.CourseId,
 		Date:          &date,
 		Feedback:      request.Feedback,
-		PaymentStatus: request.PaymentStatus,
-		LessonsStatus: request.LessonsStatus,
+		PaymentStatus: &request.PaymentStatus,
+		LessonsStatus: &request.LessonsStatus,
 		FeedbackDate:  &feedbackdate,
 		CreatedAt:     &createdAt,
 	}

@@ -17,23 +17,32 @@ create table lessons(
     student_id UUID REFERENCES students(id) ON DELETE CASCADE,
     date DATE NOT NULL,
     feedback TEXT,
-    payment_status payment_status AS ENUM ('оплачен', 'не оплачен', 'предоплата'),
-    lessons_status lessons_status AS ENUM ('пропущен', 'проведен', 'запланирован', 'отменен'),
+    payment_status payment_status,
+    lessons_status lessons_status,
     feedback_date TIMESTAMP NOT NULL,
     created_at TIMESTAMP DEFAULT NOW()
 )
+CREATE TYPE payment_status AS ENUM ('оплачен', 'не оплачен', 'предоплата');
 
 CREATE TYPE lessons_status AS ENUM ('пропущен', 'проведен', 'запланирован', 'отменен');
 
 DROP TYPE IF EXISTS lessons_status
 
 
+create table courses(
+  id UUID PRIMARY KEY,
+  text TEXT NOT null
+)
+
 //Образец для Post
 {
-  "student_id": "550e8400-e29b-41d4-a716-446655440000",
-  "date": "2025-04-01",
+  "student_id": "88a57423-8b7f-4977-9479-7aefecda6fce",
+  "course_id": "c3ad5757-27be-4958-bc63-d9d20a4c53c6",
+  "date": "01.04.2025",
   "feedback": "Отличный урок!",
-  "status": "проведен",
   "feedback_date": "01.04.2025",
   "created_at": "01.04.2025"
 }
+
+//доработка таблицы уроков
+alter table lessons add column course_id UUID REFERENCES courses(id) ON DELETE CASCADE

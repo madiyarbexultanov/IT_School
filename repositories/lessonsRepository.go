@@ -35,14 +35,15 @@ func (r *LessonsRepository) Create(c context.Context, lessons models.Lessons) (u
 	l := logger.GetLogger()
 	lessons.Id = uuid.New()
 
-	row := r.db.QueryRow(c, `INSERT INTO lessons (id, student_id, date, feedback, payment_status, lessons_status,feedback_date, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) 
+	row := r.db.QueryRow(c, `INSERT INTO lessons (id, student_id, course_id, date, feedback, feedback_date, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7) 
 RETURNING id`,
 		lessons.Id,
 		lessons.StudentId,
+		lessons.CourseId,
 		lessons.Date,
 		lessons.Feedback,
-		lessons.PaymentStatus,
-		lessons.LessonsStatus,
+		// lessons.PaymentStatus,
+		// lessons.LessonsStatus,
 		lessons.FeedbackDate,
 		lessons.CreatedAt)
 
@@ -59,6 +60,7 @@ func (r *LessonsRepository) FindById(c context.Context, lessonsId uuid.UUID) (mo
 	sql := `select 
 	l.id,
 	l.student_id,
+	l.course_id,
 	l.date, 
 	l.feedback,
 	l.payment_status,
@@ -73,6 +75,7 @@ func (r *LessonsRepository) FindById(c context.Context, lessonsId uuid.UUID) (mo
 	row := r.db.QueryRow(c, sql, lessonsId)
 	if err := row.Scan(&lessons.Id,
 		&lessons.StudentId,
+		&lessons.CourseId,
 		&lessons.Date,
 		&lessons.Feedback,
 		&lessons.PaymentStatus,
@@ -89,6 +92,7 @@ func (r *LessonsRepository) FindAll(c context.Context, filters models.LessonsFil
 	sql := `select 
 	l.id,
 	l.student_id,
+	l.course_id,
 	l.date, 
 	l.feedback,
 	l.payment_status,
@@ -123,6 +127,7 @@ func (r *LessonsRepository) FindAll(c context.Context, filters models.LessonsFil
 		err := row.Scan(
 			&lesson.Id,
 			&lesson.StudentId,
+			&lesson.CourseId,
 			&lesson.Date,
 			&lesson.Feedback,
 			&lesson.PaymentStatus,
@@ -157,14 +162,16 @@ func (r *LessonsRepository) Update(c context.Context, updateLessons models.Lesso
 	UPDATE lessons
 	SET 
 		student_id = $1,
-		date = $2,
-		feedback = $3,
-		payment_status = $4,
-		lessons_status = $5,
-		feedback_date = $6,
-		created_at = $7
-	WHERE id = $8`,
+		course_id = $2,
+		date = $3,
+		feedback = $4,
+		payment_status = $5,
+		lessons_status = $6,
+		feedback_date = $7,
+		created_at = $8
+	WHERE id = $9`,
 		updateLessons.StudentId,
+		updateLessons.CourseId,
 		updateLessons.Date,
 		updateLessons.Feedback,
 		updateLessons.PaymentStatus,

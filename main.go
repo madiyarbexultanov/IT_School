@@ -46,8 +46,10 @@ func main() {
 
 	StudentsRepository := repositories.NewStudentsRepository(conn)
 	LessonsRepository := repositories.NewLessonsRepository(conn)
+	CourseRepository := repositories.NewCourseRepository(conn)
 	StudentsHandlers := handlers.NewStudentsHandlers(StudentsRepository)
 	LessonsHandlers := handlers.NewLessonsHandlers(LessonsRepository)
+	CoursesHandlers := handlers.NewCourseHandlers(CourseRepository)
 
 	// authorized := r.Group("")
 	// authorized.Use(middlewares.AuthMiddleware)
@@ -70,6 +72,14 @@ func main() {
 	r.GET("/lessons", LessonsHandlers.FindAll)
 	r.PUT("/lessons/:lessonsId", LessonsHandlers.Update)
 	r.DELETE("/lessons/:lessonsId", LessonsHandlers.Delete)
+
+	//http://localhost:8081/courses
+	r.POST("/courses", CoursesHandlers.Create)
+	r.GET("/courses/:courseId", CoursesHandlers.FindById)
+	r.GET("/courses", CoursesHandlers.FindAll)
+	r.PUT("/courses/:courseId", CoursesHandlers.Update)
+	r.DELETE("/courses/:courseId", CoursesHandlers.Delete)
+
 	docs.SwaggerInfo.BasePath = "/"
 	r.GET("/swagger/*any", swagger.WrapHandler(swaggerfiles.Handler))
 
@@ -93,7 +103,7 @@ func loadConfig() error {
 	return nil
 }
 func connectToDb() (*pgxpool.Pool, error) {
-	conn, err := pgxpool.New(context.Background(), config.Config.DbConnectionString)
+	conn, err := pgxpool.New(context.Background(), "postgres://postgres:123456@localhost:5432/it_school")
 	if err != nil {
 		return nil, err
 	}
