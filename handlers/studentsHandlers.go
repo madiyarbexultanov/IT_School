@@ -2,14 +2,17 @@ package handlers
 
 import (
 	"fmt"
+	"it_school/logger"
 	"it_school/models"
 	"it_school/repositories"
+	"log"
 	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/nyaruka/phonenumbers"
+	"go.uber.org/zap"
 )
 
 type createStudentRequest struct {
@@ -34,6 +37,7 @@ type updateStudentRequest struct {
 	PlatformLink string   `json:"platform_link"`
 	CrmLink      string   `json:"crm_link"`
 	CreatedAt    *string  `json:"created_at"`
+	IsActive     *string  `json:"is_active"`
 }
 type StudentsHandlers struct {
 	StudentsRepo *repositories.StudentsRepository
@@ -162,6 +166,7 @@ func (h *StudentsHandlers) FindById(c *gin.Context) {
 // @Failure 500 {object} models.ApiError
 // @Router /students/{studentId} [put]
 func (h *StudentsHandlers) Update(c *gin.Context) {
+	l := logger.GetLogger()
 	idStr := c.Param("studentId")
 	studentId, err := uuid.Parse(idStr)
 	if err != nil {
@@ -184,6 +189,7 @@ func (h *StudentsHandlers) Update(c *gin.Context) {
 
 	formattedPhone, err := formatPhoneNumber(*request.PhoneNumber, "KZ")
 	if err != nil {
+		log.Println("Error formatting phone number:", err)
 		c.JSON(http.StatusBadRequest, models.NewApiError("Invalid student's phone number"))
 		return
 	}
@@ -209,13 +215,14 @@ func (h *StudentsHandlers) Update(c *gin.Context) {
 		PlatformLink:      request.PlatformLink,
 		CrmLink:           request.CrmLink,
 		CreatedAt:         &CreatedAt,
+		IsActive:          request.IsActive,
 	}
 	err = h.StudentsRepo.Update(c, students)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, models.NewApiError(err.Error()))
+		l.Error("Ошибка при обновлении студента", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, models.NewApiError("Failed to update student"))
 		return
 	}
-
 	c.Status(http.StatusOK)
 }
 
@@ -258,7 +265,7 @@ func (h *StudentsHandlers) Delete(c *gin.Context) {
 	idStr := c.Param("studentId")
 	studentId, err := uuid.Parse(idStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewApiError("Invalid Seasons Id"))
+		c.JSON(http.StatusBadRequest, models.NewApiError("Invalid students Id"))
 		return
 	}
 

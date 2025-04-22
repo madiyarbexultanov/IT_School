@@ -58,7 +58,8 @@ func (r *StudentsRepository) FindAll(c context.Context, filters models.StudentFi
 	s.courses, 
 	s.platform_link, 
 	s.crm_link, 
-	s.created_at 
+	s.created_at,
+	s.is_active
 	FROM students s where 1=1`
 
 	params := pgx.NamedArgs{}
@@ -105,6 +106,7 @@ func (r *StudentsRepository) FindAll(c context.Context, filters models.StudentFi
 			&student.PlatformLink,
 			&student.CrmLink,
 			&student.CreatedAt,
+			&student.IsActive,
 		)
 		if err != nil {
 			return nil, err
@@ -125,7 +127,8 @@ func (r *StudentsRepository) FindById(c context.Context, studentId uuid.UUID) (m
 			s.courses, 
 			s.platform_link, 
 			s.crm_link, 
-			s.created_at 
+			s.created_at,
+			s.is_active 
 			FROM students s
 			WHERE s.id = $1`
 
@@ -143,6 +146,7 @@ func (r *StudentsRepository) FindById(c context.Context, studentId uuid.UUID) (m
 		&student.PlatformLink,
 		&student.CrmLink,
 		&student.CreatedAt,
+		&student.IsActive,
 	)
 	if err != nil {
 		l.Error("Ошибка запроса к базе", zap.String("db_msg", err.Error()))
@@ -178,8 +182,9 @@ func (r *StudentsRepository) Update(c context.Context, updateStudents models.Stu
 		courses = $6,
 		platform_link = $7,
 		crm_link = $8,
-		created_at = $9
-	WHERE id = $10`,
+		created_at = $9,
+		is_active = $10
+	WHERE id = $11`,
 		updateStudents.FullName,
 		updateStudents.PhoneNumber,
 		updateStudents.ParentName,
@@ -189,6 +194,7 @@ func (r *StudentsRepository) Update(c context.Context, updateStudents models.Stu
 		updateStudents.PlatformLink,
 		updateStudents.CrmLink,
 		updateStudents.CreatedAt,
+		updateStudents.IsActive,
 		updateStudents.Id)
 
 	if err != nil {

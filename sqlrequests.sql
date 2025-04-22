@@ -66,11 +66,21 @@ _____________________________________________________________________
     "platform_link": "https://platform.example.com",
     "crm_link": "https://crm.example.com",
     "created_at": "27.03.2025"
+    "is_active":"неактивен"
   }
+
+
+
+
+
 
 //доработка таблицы уроков
 alter table lessons add column course_id UUID REFERENCES courses(id) ON DELETE CASCADE
 
 
 //добавление графы is_active в students 
-alter table students add column is_active 
+alter table students add column is_active is_active
+
+//добавила тип is_active
+CREATE TYPE is_active AS ENUM ('активен', 'неактивен');
+
