@@ -16,10 +16,11 @@ import (
 )
 
 type createStudentRequest struct {
-	FullName          string  `json:"full_name"`
-	PhoneNumber       *string `json:"phone_number"`
-	ParentName        string  `json:"parent_name"`
-	ParentPhoneNumber *string `json:"parent_phone_number"`
+	CourseId          uuid.UUID `json:"course_id"`
+	FullName          string    `json:"full_name"`
+	PhoneNumber       *string   `json:"phone_number"`
+	ParentName        string    `json:"parent_name"`
+	ParentPhoneNumber *string   `json:"parent_phone_number"`
 	//CuratorId         uuid.UUID  `json:"curator_id"`
 	Courses      []string `json:"courses"`
 	PlatformLink string   `json:"platform_link"`
@@ -28,10 +29,11 @@ type createStudentRequest struct {
 }
 
 type updateStudentRequest struct {
-	FullName          string  `json:"full_name"`
-	PhoneNumber       *string `json:"phone_number"`
-	ParentName        string  `json:"parent_name"`
-	ParentPhoneNumber *string `json:"parent_phone_number"`
+	CourseId          uuid.UUID `json:"course_id"`
+	FullName          string    `json:"full_name"`
+	PhoneNumber       *string   `json:"phone_number"`
+	ParentName        string    `json:"parent_name"`
+	ParentPhoneNumber *string   `json:"parent_phone_number"`
 	//CuratorId         uuid.UUID  `json:"curator_id"`
 	Courses      []string `json:"courses"`
 	PlatformLink string   `json:"platform_link"`
@@ -111,6 +113,7 @@ func (h *StudentsHandlers) Create(c *gin.Context) {
 	}
 
 	students := models.Student{
+		CourseId:          request.CourseId,
 		FullName:          request.FullName,
 		PhoneNumber:       &formattedPhone,
 		ParentName:        request.ParentName,
@@ -207,6 +210,7 @@ func (h *StudentsHandlers) Update(c *gin.Context) {
 	}
 	students := models.Student{
 		Id:                studentId,
+		CourseId:          request.CourseId,
 		FullName:          request.FullName,
 		PhoneNumber:       &formattedPhone,
 		ParentName:        request.ParentName,

@@ -8,6 +8,7 @@ import (
 
 type Student struct {
 	Id                uuid.UUID  `json:"id"`
+	CourseId          uuid.UUID  `json:"course_id"`
 	FullName          string     `json:"full_name"`
 	PhoneNumber       *string    `json:"phone_number"`
 	ParentName        string     `json:"parent_name"`
