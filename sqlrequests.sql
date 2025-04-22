@@ -34,7 +34,9 @@ create table courses(
   text TEXT NOT null
 )
 
-//Образец для Post
+
+_______________________________________________________________________
+//Образец для Post lessons
 {
   "student_id": "88a57423-8b7f-4977-9479-7aefecda6fce",
   "course_id": "c3ad5757-27be-4958-bc63-d9d20a4c53c6",
@@ -43,6 +45,28 @@ create table courses(
   "feedback_date": "01.04.2025",
   "created_at": "01.04.2025"
 }
+
+
+
+//в put запросе я добавила
+{
+  "payment_status":"оплачен",
+  "lessons_status":"проведен"
+} 
+
+_____________________________________________________________________
+//POST lk
+/* localhost:8081/students */
+{
+    "full_name": "Молдир Берикканова",
+    "phone_number": "+77086108823",
+    "parent_name": "Анна Берикканова",
+    "parent_phone_number": "+77081234567",
+    "courses": ["math", "physics", "chemistry"],
+    "platform_link": "https://platform.example.com",
+    "crm_link": "https://crm.example.com",
+    "created_at": "27.03.2025"
+  }
 
 //доработка таблицы уроков
 alter table lessons add column course_id UUID REFERENCES courses(id) ON DELETE CASCADE
