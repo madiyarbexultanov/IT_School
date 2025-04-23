@@ -2,21 +2,25 @@ package handlers
 
 import (
 	"fmt"
-	"net/http"
+	"it_school/logger"
 	"it_school/models"
 	"it_school/repositories"
+	"log"
+	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/nyaruka/phonenumbers"
+	"go.uber.org/zap"
 )
 
 type createStudentRequest struct {
-	FullName          string  `json:"full_name"`
-	PhoneNumber       *string `json:"phone_number"`
-	ParentName        string  `json:"parent_name"`
-	ParentPhoneNumber *string `json:"parent_phone_number"`
+	CourseId          uuid.UUID `json:"course_id"`
+	FullName          string    `json:"full_name"`
+	PhoneNumber       *string   `json:"phone_number"`
+	ParentName        string    `json:"parent_name"`
+	ParentPhoneNumber *string   `json:"parent_phone_number"`
 	//CuratorId         uuid.UUID  `json:"curator_id"`
 	Courses      []string `json:"courses"`
 	PlatformLink string   `json:"platform_link"`
@@ -25,15 +29,17 @@ type createStudentRequest struct {
 }
 
 type updateStudentRequest struct {
-	FullName          string  `json:"full_name"`
-	PhoneNumber       *string `json:"phone_number"`
-	ParentName        string  `json:"parent_name"`
-	ParentPhoneNumber *string `json:"parent_phone_number"`
+	CourseId          uuid.UUID `json:"course_id"`
+	FullName          string    `json:"full_name"`
+	PhoneNumber       *string   `json:"phone_number"`
+	ParentName        string    `json:"parent_name"`
+	ParentPhoneNumber *string   `json:"parent_phone_number"`
 	//CuratorId         uuid.UUID  `json:"curator_id"`
 	Courses      []string `json:"courses"`
 	PlatformLink string   `json:"platform_link"`
 	CrmLink      string   `json:"crm_link"`
 	CreatedAt    *string  `json:"created_at"`
+	IsActive     *string  `json:"is_active"`
 }
 type StudentsHandlers struct {
 	StudentsRepo *repositories.StudentsRepository
@@ -70,6 +76,16 @@ func formatPhoneNumber(input string, defaultRegion string) (string, error) {
 	return phonenumbers.Format(num, phonenumbers.INTERNATIONAL), nil
 }
 
+// @Summary Create new students
+// @Description Создание студента с курсами, номерами телефонов и ссылками
+// @Tags Students
+// @Accept json
+// @Produce json
+// @Param student body createStudentRequest true "Информация о студенте"
+// @Success 200 {object} map[string]string "id студента"
+// @Failure 400 {object} models.ApiError
+// @Failure 500 {object} models.ApiError
+// @Router /students [post]
 func (h *StudentsHandlers) Create(c *gin.Context) {
 	var request createStudentRequest
 	err := c.Bind(&request)
@@ -97,6 +113,7 @@ func (h *StudentsHandlers) Create(c *gin.Context) {
 	}
 
 	students := models.Student{
+		CourseId:          request.CourseId,
 		FullName:          request.FullName,
 		PhoneNumber:       &formattedPhone,
 		ParentName:        request.ParentName,
@@ -117,6 +134,14 @@ func (h *StudentsHandlers) Create(c *gin.Context) {
 	})
 }
 
+// @Summary Найти студента по ID
+// @Description Получение информации о студенте по UUID
+// @Tags Students
+// @Produce json
+// @Param studentId path string true "ID студента"
+// @Success 200 {object} models.Student
+// @Failure 400 {object} models.ApiError
+// @Router /students/{studentId} [get]
 func (h *StudentsHandlers) FindById(c *gin.Context) {
 	idStr := c.Param("studentId")
 	studentId, err := uuid.Parse(idStr)
@@ -133,7 +158,18 @@ func (h *StudentsHandlers) FindById(c *gin.Context) {
 	c.JSON(http.StatusOK, Students)
 }
 
+// @Summary Обновить данные студента
+// @Description Обновление информации о студенте по UUID
+// @Tags Students
+// @Accept json
+// @Param studentId path string true "ID студента"
+// @Param student body updateStudentRequest true "Обновлённые данные студента"
+// @Success 200
+// @Failure 400 {object} models.ApiError
+// @Failure 500 {object} models.ApiError
+// @Router /students/{studentId} [put]
 func (h *StudentsHandlers) Update(c *gin.Context) {
+	l := logger.GetLogger()
 	idStr := c.Param("studentId")
 	studentId, err := uuid.Parse(idStr)
 	if err != nil {
@@ -156,6 +192,7 @@ func (h *StudentsHandlers) Update(c *gin.Context) {
 
 	formattedPhone, err := formatPhoneNumber(*request.PhoneNumber, "KZ")
 	if err != nil {
+		log.Println("Error formatting phone number:", err)
 		c.JSON(http.StatusBadRequest, models.NewApiError("Invalid student's phone number"))
 		return
 	}
@@ -173,6 +210,7 @@ func (h *StudentsHandlers) Update(c *gin.Context) {
 	}
 	students := models.Student{
 		Id:                studentId,
+		CourseId:          request.CourseId,
 		FullName:          request.FullName,
 		PhoneNumber:       &formattedPhone,
 		ParentName:        request.ParentName,
@@ -181,16 +219,28 @@ func (h *StudentsHandlers) Update(c *gin.Context) {
 		PlatformLink:      request.PlatformLink,
 		CrmLink:           request.CrmLink,
 		CreatedAt:         &CreatedAt,
+		IsActive:          request.IsActive,
 	}
 	err = h.StudentsRepo.Update(c, students)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, models.NewApiError(err.Error()))
+		l.Error("Ошибка при обновлении студента", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, models.NewApiError("Failed to update student"))
 		return
 	}
-
 	c.Status(http.StatusOK)
 }
 
+// @Summary Получить список студентов
+// @Description Список студентов с фильтрами по имени, курсу, активности и куратору
+// @Tags Students
+// @Produce json
+// @Param search query string false "Поиск по имени"
+// @Param course query string false "Фильтр по курсу"
+// @Param is_active query string false "Фильтр по активности"
+// @Param curator_id query string false "ID куратора"
+// @Success 200 {array} models.Student
+// @Failure 500
+// @Router /students [get]
 func (h *StudentsHandlers) FindAll(c *gin.Context) {
 
 	filters := models.StudentFilters{
@@ -208,11 +258,18 @@ func (h *StudentsHandlers) FindAll(c *gin.Context) {
 	c.JSON(http.StatusOK, Seasons)
 }
 
+// @Summary Удалить студента
+// @Description Удаление студента по UUID
+// @Tags Students
+// @Param studentId path string true "ID студента"
+// @Success 200
+// @Failure 400 {object} models.ApiError
+// @Router /students/{studentId} [delete]
 func (h *StudentsHandlers) Delete(c *gin.Context) {
 	idStr := c.Param("studentId")
 	studentId, err := uuid.Parse(idStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewApiError("Invalid Seasons Id"))
+		c.JSON(http.StatusBadRequest, models.NewApiError("Invalid students Id"))
 		return
 	}
 

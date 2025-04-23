@@ -18,6 +18,8 @@ func NewCourseRepository(conn *pgxpool.Pool) *CourseRepository {
 	return &CourseRepository{db: conn}
 }
 
+
+
 func (r *CourseRepository) Create(c context.Context, course models.Course) (uuid.UUID, error) {
 	course.Id = uuid.New()
 	row := r.db.QueryRow(c, `insert into courses (id, title) values ($1, $2) returning id`, course.Id, course.Title)

@@ -24,6 +24,17 @@ func NewCourseHandlers(courseRepo *repositories.CourseRepository) *CourseHandler
 	return &CourseHandlers{courseRepo: courseRepo}
 }
 
+// Create godoc
+// @Summary Создать курс
+// @Description Создает новый курс
+// @Tags courses
+// @Accept json
+// @Produce json
+// @Param request body CourseRequest true "Данные курса"
+// @Success 200 {object} map[string]string
+// @Failure 400 {object} models.ApiError
+// @Failure 500 {object} models.ApiError
+// @Router /courses [post]
 func (h *CourseHandlers) Create(c *gin.Context) {
 	var request CourseRequest
 	err := c.Bind(&request)
@@ -46,6 +57,18 @@ func (h *CourseHandlers) Create(c *gin.Context) {
 	})
 }
 
+// Update godoc
+// @Summary Обновить курс
+// @Description Обновляет курс по ID
+// @Tags courses
+// @Accept json
+// @Produce json
+// @Param courseId path string true "ID курса"
+// @Param request body UpdateRequest true "Обновлённые данные"
+// @Success 200
+// @Failure 400 {object} models.ApiError
+// @Failure 500 {object} models.ApiError
+// @Router /courses/{courseId} [put]
 func (h *CourseHandlers) Update(c *gin.Context) {
 	idStr := c.Param("courseId")
 	courseId, err := uuid.Parse(idStr)
@@ -81,6 +104,15 @@ func (h *CourseHandlers) Update(c *gin.Context) {
 	c.Status(http.StatusOK)
 }
 
+// FindById godoc
+// @Summary Получить курс по ID
+// @Description Возвращает курс по его идентификатору
+// @Tags courses
+// @Produce json
+// @Param courseId path string true "ID курса"
+// @Success 200 {object} models.Course
+// @Failure 400 {object} models.ApiError
+// @Router /courses/{courseId} [get]
 func (h *CourseHandlers) FindById(c *gin.Context) {
 	idStr := c.Param("courseId")
 	courseId, err := uuid.Parse(idStr)
@@ -97,6 +129,14 @@ func (h *CourseHandlers) FindById(c *gin.Context) {
 	c.JSON(http.StatusOK, course)
 }
 
+// FindAll godoc
+// @Summary Получить все курсы
+// @Description Возвращает список всех курсов
+// @Tags courses
+// @Produce json
+// @Success 200 {array} models.Course
+// @Failure 400 {object} models.ApiError
+// @Router /courses [get]
 func (h *CourseHandlers) FindAll(c *gin.Context) {
 	courses, err := h.courseRepo.FindAll(c)
 	if err != nil {
@@ -106,6 +146,15 @@ func (h *CourseHandlers) FindAll(c *gin.Context) {
 	c.JSON(http.StatusOK, courses)
 }
 
+// Delete godoc
+// @Summary Удалить курс
+// @Description Удаляет курс по ID
+// @Tags courses
+// @Produce json
+// @Param courseId path string true "ID курса"
+// @Success 200
+// @Failure 400 {object} models.ApiError
+// @Router /courses/{courseId} [delete]
 func (h *CourseHandlers) Delete(c *gin.Context) {
 	idStr := c.Param("courseId")
 	courseId, err := uuid.Parse(idStr)
