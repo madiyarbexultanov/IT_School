@@ -178,8 +178,7 @@ func (r *StudentsRepository) Update(c context.Context, updateStudents models.Stu
 		courses = $6,
 		platform_link = $7,
 		crm_link = $8,
-		created_at = $9
-	WHERE id = $10`,
+	WHERE id = $9`,
 		updateStudents.FullName,
 		updateStudents.PhoneNumber,
 		updateStudents.ParentName,
@@ -188,7 +187,6 @@ func (r *StudentsRepository) Update(c context.Context, updateStudents models.Stu
 		updateStudents.Courses,
 		updateStudents.PlatformLink,
 		updateStudents.CrmLink,
-		updateStudents.CreatedAt,
 		updateStudents.Id)
 
 	if err != nil {

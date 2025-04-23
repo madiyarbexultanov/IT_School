@@ -32,30 +32,31 @@ func NewLessonsRepository(conn *pgxpool.Pool) *LessonsRepository {
 }
 
 func (r *LessonsRepository) Create(c context.Context, lessons models.Lessons) (uuid.UUID, error) {
-	l := logger.GetLogger()
-	lessons.Id = uuid.New()
+    l := logger.GetLogger()
+    lessons.Id = uuid.New()
 
-	row := r.db.QueryRow(c, `INSERT INTO lessons (id, student_id, course_id, date, feedback, feedback_date, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7) 
-RETURNING id`,
-		lessons.Id,
-		lessons.StudentId,
-		lessons.CourseId,
-		lessons.Date,
-		lessons.Feedback,
-		// lessons.PaymentStatus,
-		// lessons.LessonsStatus,
-		lessons.FeedbackDate,
-		lessons.CreatedAt)
+    row := r.db.QueryRow(c, `INSERT INTO lessons 
+        (id, student_id, course_id, date, feedback, payment_status, lessons_status, feedback_date, created_at) 
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) 
+        RETURNING id`,
+        lessons.Id,
+        lessons.StudentId,
+        lessons.CourseId,
+        lessons.Date,
+        lessons.Feedback,
+        lessons.PaymentStatus,
+        lessons.LessonsStatus,
+        lessons.FeedbackDate,
+        lessons.CreatedAt)
 
-	err := row.Scan(&lessons.Id)
-	if err != nil {
-		l.Error("Ошибка при создании урока/предмета/дисциплины", zap.Error(err))
-		return uuid.UUID{}, err
-	}
-	l.Info("Урок/предмет/дисциплина успешно создан", zap.String("id", lessons.Id.String())) ///тут нет название урока
-	return lessons.Id, nil
+    err := row.Scan(&lessons.Id)
+    if err != nil {
+        l.Error("Ошибка при создании урока", zap.Error(err))
+        return uuid.UUID{}, err
+    }
+    l.Info("Урок успешно создан", zap.String("id", lessons.Id.String()))
+    return lessons.Id, nil
 }
-
 func (r *LessonsRepository) FindById(c context.Context, lessonsId uuid.UUID) (models.Lessons, error) {
 	sql := `select 
 	l.id,

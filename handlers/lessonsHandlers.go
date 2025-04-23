@@ -10,15 +10,12 @@ import (
 	"github.com/google/uuid"
 )
 
+// Упрощенная структура запроса - оставляем только то, что действительно нужно передавать
 type createLessonsrequest struct {
 	StudentId uuid.UUID `json:"student_id"`
 	CourseId  uuid.UUID `json:"course_id"`
-	Date      *string   `json:"date"`
+	Date      *string   `json:"date"` // Опционально - если не указана, берем текущую дату
 	Feedback  string    `json:"feedback"`
-	// PaymentStatus string    `json:"payment_status"`
-	// LessonsStatus string    `json:"lessons_status"`
-	FeedbackDate *string `json:"feedback_date"`
-	CreatedAt    *string `json:"created_at"`
 }
 
 type updateLessonsrequest struct {
@@ -28,8 +25,6 @@ type updateLessonsrequest struct {
 	Feedback      string    `json:"feedback"`
 	PaymentStatus string    `json:"payment_status"`
 	LessonsStatus string    `json:"lessons_status"`
-	FeedbackDate  *string   `json:"feedback_date"`
-	CreatedAt     *string   `json:"created_at"`
 }
 
 type LessonsHandlers struct {
@@ -46,37 +41,51 @@ func (h *LessonsHandlers) Create(c *gin.Context) {
 	var request createLessonsrequest
 	err := c.Bind(&request)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewApiError("couldn´t create lessons request"))
+		c.JSON(http.StatusBadRequest, models.NewApiError("couldn't create lessons request"))
 		return
 	}
 
-	date, err := time.Parse("02.01.2006", *request.Date)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewApiError("Invalid created date format. Use DD.MM.YYYY"))
-		return
+	now := time.Now()
+	var lessonDate time.Time
+	var lessonStatus string
+
+	// Обработка даты урока
+	if request.Date != nil {
+		// Если дата передана - парсим ее
+		parsedDate, err := time.Parse("02.01.2006", *request.Date)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, models.NewApiError("Invalid date format. Use DD.MM.YYYY"))
+			return
+		}
+		lessonDate = parsedDate
+		
+		// Определяем статус на основе даты
+		if lessonDate.After(now) {
+			lessonStatus = "запланирован"
+		} else {
+			lessonStatus = "проведен"
+		}
+	} else {
+		// Если дата не передана - используем текущую дату и статус "проведен"
+		lessonDate = now
+		lessonStatus = "проведен"
 	}
 
-	feedbackdate, err := time.Parse("02.01.2006", *request.FeedbackDate)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewApiError("Invalid created feedbackdate format. Use DD.MM.YYYY"))
-		return
-	}
+	// Создаем указатели для строковых значений
+	defaultPaymentStatus := "не оплачено"
+	paymentStatusPtr := &defaultPaymentStatus
+	lessonStatusPtr := &lessonStatus
 
-	createdAt, err := time.Parse("02.01.2006", *request.CreatedAt)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewApiError("Invalid created createdAt format. Use DD.MM.YYYY"))
-		return
-	}
-
+	// Создаем объект урока с автоматически заполненными полями
 	lessons := models.Lessons{
-		StudentId: request.StudentId,
-		CourseId:  request.CourseId,
-		Date:      &date,
-		Feedback:  request.Feedback,
-		// PaymentStatus: request.PaymentStatus,
-		// LessonsStatus: request.LessonsStatus,
-		FeedbackDate: &feedbackdate,
-		CreatedAt:    &createdAt,
+		StudentId:     request.StudentId,
+		CourseId:      request.CourseId,
+		Date:          &lessonDate,
+		Feedback:      request.Feedback,
+		PaymentStatus: paymentStatusPtr, // Теперь это *string
+		LessonsStatus: lessonStatusPtr,  // Указатель на статус
+		FeedbackDate:  nil,              // Дата отзыва пока не установлена
+		CreatedAt:     &now,
 	}
 
 	id, err := h.LessonsRepo.Create(c, lessons)
@@ -123,62 +132,90 @@ func (h *LessonsHandlers) Update(c *gin.Context) {
 	idStr := c.Param("lessonsId")
 	lessonsId, err := uuid.Parse(idStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewApiError("Invalid students id"))
+		c.JSON(http.StatusBadRequest, models.NewApiError("Invalid lesson id"))
 		return
 	}
 
-	lessons, err := h.LessonsRepo.FindById(c, lessonsId)
+	// Получаем текущий урок
+	existingLesson, err := h.LessonsRepo.FindById(c, lessonsId)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, models.NewApiError(err.Error()))
 		return
 	}
 
 	var request updateLessonsrequest
-	err = c.Bind(&request)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewApiError("couldn´t create lessons request"))
+	if err := c.Bind(&request); err != nil {
+		c.JSON(http.StatusBadRequest, models.NewApiError("couldn't parse lesson request"))
 		return
 	}
 
-	date, err := time.Parse("02.01.2006", *request.Date)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewApiError("Invalid created date format. Use DD.MM.YYYY"))
-		return
+	// Обработка даты урока
+	var lessonDate time.Time
+	if request.Date != nil {
+		parsedDate, err := time.Parse("02.01.2006", *request.Date)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, models.NewApiError("Invalid date format. Use DD.MM.YYYY"))
+			return
+		}
+		lessonDate = parsedDate
+	} else if existingLesson.Date != nil {
+		lessonDate = *existingLesson.Date
+	} else {
+		lessonDate = time.Now()
 	}
 
-	feedbackdate, err := time.Parse("02.01.2006", *request.FeedbackDate)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewApiError("Invalid created date format. Use DD.MM.YYYY"))
-		return
+	// Обработка статусов
+	paymentStatus := request.PaymentStatus
+	if paymentStatus == "" && existingLesson.PaymentStatus != nil {
+		paymentStatus = *existingLesson.PaymentStatus
+	} else if paymentStatus == "" {
+		paymentStatus = "не оплачено"
 	}
 
-	createdAt, err := time.Parse("02.01.2006", *request.CreatedAt)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewApiError("Invalid created date format. Use DD.MM.YYYY"))
-		return
+	lessonStatus := request.LessonsStatus
+	if lessonStatus == "" && existingLesson.LessonsStatus != nil {
+		lessonStatus = *existingLesson.LessonsStatus
+	} else if lessonStatus == "" {
+		// Автоматически определяем статус на основе даты
+		if lessonDate.After(time.Now()) {
+			lessonStatus = "запланирован"
+		} else {
+			lessonStatus = "проведен"
+		}
 	}
 
-	lessons = models.Lessons{
+	// Обработка даты отзыва
+	var feedbackDate *time.Time
+	if request.Feedback != "" && existingLesson.FeedbackDate == nil {
+		now := time.Now()
+		feedbackDate = &now
+	} else {
+		feedbackDate = existingLesson.FeedbackDate
+	}
+
+	// Создаем указатели для строковых значений
+	paymentStatusPtr := &paymentStatus
+	lessonStatusPtr := &lessonStatus
+
+	updatedLesson := models.Lessons{
 		Id:            lessonsId,
 		StudentId:     request.StudentId,
 		CourseId:      request.CourseId,
-		Date:          &date,
+		Date:          &lessonDate,
 		Feedback:      request.Feedback,
-		PaymentStatus: &request.PaymentStatus,
-		LessonsStatus: &request.LessonsStatus,
-		FeedbackDate:  &feedbackdate,
-		CreatedAt:     &createdAt,
+		PaymentStatus: paymentStatusPtr,
+		LessonsStatus: lessonStatusPtr,
+		FeedbackDate:  feedbackDate,
+		CreatedAt:     existingLesson.CreatedAt, // Дата создания не меняется
 	}
 
-	err = h.LessonsRepo.Update(c, lessons)
-	if err != nil {
+	if err := h.LessonsRepo.Update(c, updatedLesson); err != nil {
 		c.JSON(http.StatusInternalServerError, models.NewApiError(err.Error()))
 		return
 	}
 
 	c.Status(http.StatusOK)
 }
-
 func (h *LessonsHandlers) Delete(c *gin.Context) {
 	idStr := c.Param("lessonsId")
 	lessonsId, err := uuid.Parse(idStr)
