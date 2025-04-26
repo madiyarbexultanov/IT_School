@@ -17,23 +17,76 @@ create table lessons(
     student_id UUID REFERENCES students(id) ON DELETE CASCADE,
     date DATE NOT NULL,
     feedback TEXT,
-    payment_status payment_status AS ENUM ('оплачен', 'не оплачен', 'предоплата'),
-    lessons_status lessons_status AS ENUM ('пропущен', 'проведен', 'запланирован', 'отменен'),
+    payment_status payment_status,
+    lessons_status lessons_status,
     feedback_date TIMESTAMP NOT NULL,
     created_at TIMESTAMP DEFAULT NOW()
 )
+CREATE TYPE payment_status AS ENUM ('оплачен', 'не оплачен', 'предоплата');
 
 CREATE TYPE lessons_status AS ENUM ('пропущен', 'проведен', 'запланирован', 'отменен');
 
 DROP TYPE IF EXISTS lessons_status
 
 
-//Образец для Post
+create table courses(
+  id UUID PRIMARY KEY,
+  text TEXT NOT null
+)
+
+
+_______________________________________________________________________
+//Образец для Post lessons
 {
-  "student_id": "550e8400-e29b-41d4-a716-446655440000",
-  "date": "2025-04-01",
+  "student_id": "88a57423-8b7f-4977-9479-7aefecda6fce",
+  "course_id": "c3ad5757-27be-4958-bc63-d9d20a4c53c6",
+  "date": "01.04.2025",
   "feedback": "Отличный урок!",
-  "status": "проведен",
   "feedback_date": "01.04.2025",
   "created_at": "01.04.2025"
 }
+
+
+
+//в put запросе я добавила
+{
+  "payment_status":"оплачен",
+  "lessons_status":"проведен"
+} 
+
+_____________________________________________________________________
+//POST lk
+/* localhost:8081/students */
+{
+    "course_id": "c3ad5757-27be-4958-bc63-d9d20a4c53c6",
+    "full_name": "Test",
+    "phone_number": "+7 702 123 45 67",
+    "parent_name": "Test Parents",
+    "parent_phone_number": "+77081234567",
+    "courses": ["math", "physics", "chemistry"],
+    "platform_link": "https://platform.example.com",
+    "crm_link": "https://crm.example.com",
+    "created_at": "27.03.2025"
+    "is_active":"неактивен"
+  }
+
+
+
+
+
+
+//доработка таблицы уроков
+alter table lessons add column course_id UUID REFERENCES courses(id) ON DELETE CASCADE
+
+
+//добавление графы is_active в students 
+alter table students add column is_active is_active
+
+//добавила тип is_active
+CREATE TYPE is_active AS ENUM ('активен', 'неактивен');
+
+//доработка таблицы students
+alter table students add column course_id UUID REFERENCES courses(id) ON DELETE CASCADE
+
+
+
