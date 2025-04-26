@@ -12,10 +12,11 @@ import (
 
 // Упрощенная структура запроса - оставляем только то, что действительно нужно передавать
 type createLessonsrequest struct {
-	StudentId uuid.UUID `json:"student_id"`
-	CourseId  uuid.UUID `json:"course_id"`
-	Date      *string   `json:"date"` // Опционально - если не указана, берем текущую дату
-	Feedback  string    `json:"feedback"`
+	StudentId uuid.UUID 	`json:"student_id"`
+	CourseId  uuid.UUID 	`json:"course_id"`
+	Date      *string   	`json:"date"` // Опционально - если не указана, берем текущую дату
+	Feedback  string    	`json:"feedback"`
+	FeedbackDate  *string    `json:"feedback_date"`
 }
 
 type updateLessonsrequest struct {
@@ -39,22 +40,21 @@ func NewLessonsHandlers(LessonsRepo *repositories.LessonsRepository) *LessonsHan
 
 // Create godoc
 // @Summary Создать урок
-// @Description Создает новый урок для студента по курсу
+// @Description Создает новый урок для студента по курсу. Дата в формате DD.MM.YYYY. Если дата не указана, используется текущая дата.
 // @Tags lessons
 // @Accept json
 // @Produce json
-// @Param request body createLessonsrequest true "Данные урока"
-// @Success 200 {object} map[string]string
-// @Failure 400 {object} models.ApiError
-// @Failure 500 {object} models.ApiError
+// @Param request body createLessonsrequest true "Данные для создания урока" example={"student_id": "550e8400-e29b-41d4-a716-446655440000", "course_id": "550e8400-e29b-41d4-a716-446655440000", "date": "15.04.2023", "feedback": "Хорошая работа", "feedback_date": "20.04.2023"}
+// @Success 201 {object} object{id=string} "Урок успешно создан"
+// @Failure 400 {object} models.ApiError "Неверный формат данных"
+// @Failure 500 {object} models.ApiError "Ошибка при создании урока"
 // @Router /lessons [post]
 func (h *LessonsHandlers) Create(c *gin.Context) {
 	var request createLessonsrequest
-	err := c.Bind(&request)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewApiError("couldn't create lessons request"))
-		return
-	}
+if err := c.ShouldBindJSON(&request); err != nil {
+    c.JSON(http.StatusBadRequest, models.NewApiError("Неверный формат JSON: "+err.Error()))
+    return
+}
 
 	now := time.Now()
 	var lessonDate time.Time
@@ -82,8 +82,18 @@ func (h *LessonsHandlers) Create(c *gin.Context) {
 		lessonStatus = "проведен"
 	}
 
+	var feedbackDate *time.Time
+    if request.FeedbackDate != nil {
+        fd, err := time.Parse("02.01.2006", *request.FeedbackDate)
+        if err != nil {
+            c.JSON(http.StatusBadRequest, models.NewApiError("Неверный формат даты отзыва. Используйте DD.MM.YYYY"))
+            return
+        }
+        feedbackDate = &fd
+    }
+
 	// Создаем указатели для строковых значений
-	defaultPaymentStatus := "не оплачено"
+	defaultPaymentStatus := "не оплачен"
 	paymentStatusPtr := &defaultPaymentStatus
 	lessonStatusPtr := &lessonStatus
 
@@ -95,7 +105,7 @@ func (h *LessonsHandlers) Create(c *gin.Context) {
 		Feedback:      request.Feedback,
 		PaymentStatus: paymentStatusPtr, // Теперь это *string
 		LessonsStatus: lessonStatusPtr,  // Указатель на статус
-		FeedbackDate:  nil,              // Дата отзыва пока не установлена
+		FeedbackDate:  feedbackDate,              // Дата отзыва пока не установлена
 		CreatedAt:     &now,
 	}
 
@@ -110,17 +120,16 @@ func (h *LessonsHandlers) Create(c *gin.Context) {
 	})
 }
 
-// Create godoc
-// @Summary Создать урок
-// @Description Создает новый урок для студента по курсу
+// FindById godoc
+// @Summary Получить урок по ID
+// @Description Возвращает информацию об уроке по его UUID
 // @Tags lessons
-// @Accept json
 // @Produce json
-// @Param request body createLessonsrequest true "Данные урока"
-// @Success 200 {object} map[string]string
-// @Failure 400 {object} models.ApiError
-// @Failure 500 {object} models.ApiError
-// @Router /lessons [post]
+// @Param lessonsId path string true "UUID урока" format(uuid)
+// @Success 200 {object} models.Lessons "Данные урока"
+// @Failure 400 {object} models.ApiError "Неверный формат UUID"
+// @Failure 404 {object} models.ApiError "Урок не найден"
+// @Router /lessons/{lessonsId} [get]
 func (h *LessonsHandlers) FindById(c *gin.Context) {
 	idStr := c.Param("lessonsId")
 	lessonsId, err := uuid.Parse(idStr)
@@ -138,14 +147,14 @@ func (h *LessonsHandlers) FindById(c *gin.Context) {
 }
 
 // FindAll godoc
-// @Summary Получить все уроки
-// @Description Возвращает список всех уроков с фильтрацией
+// @Summary Получить список уроков
+// @Description Возвращает список уроков с возможностью фильтрации по статусам
 // @Tags lessons
 // @Produce json
-// @Param payment_status query string false "Статус оплаты"
-// @Param lessons_status query string false "Статус урока"
-// @Success 200 {array} models.Lessons
-// @Failure 500 {object} models.ApiError
+// @Param payment_status query string false "Фильтр по статусу оплаты" Enums(оплачен, не оплачен)
+// @Param lessons_status query string false "Фильтр по статусу урока" Enums(запланирован, проведен)
+// @Success 200 {array} models.Lessons "Список уроков"
+// @Failure 500 {object} models.ApiError "Ошибка сервера"
 // @Router /lessons [get]
 func (h *LessonsHandlers) FindAll(c *gin.Context) {
 	filters := models.LessonsFilters{
@@ -162,15 +171,16 @@ func (h *LessonsHandlers) FindAll(c *gin.Context) {
 
 // Update godoc
 // @Summary Обновить урок
-// @Description Обновляет данные урока по ID
+// @Description Обновляет данные урока. Дата в формате DD.MM.YYYY. Статус можно не указывать - он определится автоматически по дате.
 // @Tags lessons
 // @Accept json
 // @Produce json
-// @Param lessonsId path string true "ID урока"
-// @Param request body updateLessonsrequest true "Обновлённые данные урока"
-// @Success 200
-// @Failure 400 {object} models.ApiError
-// @Failure 500 {object} models.ApiError
+// @Param lessonsId path string true "UUID урока" format(uuid)
+// @Param request body updateLessonsrequest true "Обновленные данные урока" example={"student_id": "550e8400-e29b-41d4-a716-446655440000", "course_id": "550e8400-e29b-41d4-a716-446655440000", "date": "15.04.2023", "feedback": "Отличная работа", "payment_status": "оплачен", "lessons_status": "проведен"}
+// @Success 200 "Урок успешно обновлен"
+// @Failure 400 {object} models.ApiError "Неверные входные данные"
+// @Failure 404 {object} models.ApiError "Урок не найден"
+// @Failure 500 {object} models.ApiError "Ошибка при обновлении"
 // @Router /lessons/{lessonsId} [put]
 func (h *LessonsHandlers) Update(c *gin.Context) {
 	idStr := c.Param("lessonsId")
@@ -263,12 +273,13 @@ func (h *LessonsHandlers) Update(c *gin.Context) {
 
 // Delete godoc
 // @Summary Удалить урок
-// @Description Удаляет урок по ID
+// @Description Удаляет урок по его UUID
 // @Tags lessons
 // @Produce json
-// @Param lessonsId path string true "ID урока"
-// @Success 200
-// @Failure 400 {object} models.ApiError
+// @Param lessonsId path string true "UUID урока" format(uuid)
+// @Success 200 "Урок успешно удален"
+// @Failure 400 {object} models.ApiError "Неверный формат UUID"
+// @Failure 404 {object} models.ApiError "Урок не найден"
 // @Router /lessons/{lessonsId} [delete]
 func (h *LessonsHandlers) Delete(c *gin.Context) {
 	idStr := c.Param("lessonsId")

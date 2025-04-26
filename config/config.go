@@ -13,4 +13,8 @@ type MapConfig struct {
     SMTPPassword 	   string 		 `mapstructure:"SMTP_PASSWORD"`
     SMTPHost     	   string 		 `mapstructure:"SMTP_HOST"`
     SMTPPort     	   string 		 `mapstructure:"SMTP_PORT"`
+    Initial_Password   string 		 `mapstructure:"INITIAL_PASSWORD"`
+    Admin_Name   	   string 		 `mapstructure:"ADMIN_NAME"`
+    Admin_Mail   	   string 		 `mapstructure:"ADMIN_MAIL"`
+    Admin_Phone   	   string 		 `mapstructure:"ADMIN_PHONE"`
 }

@@ -1,4 +1,1237 @@
+definitions:
+  handlers.AuthRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  handlers.CourseRequest:
+    properties:
+      title:
+        type: string
+    type: object
+  handlers.CreateRequest:
+    properties:
+      email:
+        type: string
+      full_name:
+        type: string
+      password:
+        type: string
+      role_name:
+        type: string
+      telephone:
+        type: string
+    type: object
+  handlers.CuratorResponse:
+    properties:
+      course_ids:
+        items:
+          type: string
+        type: array
+      email:
+        type: string
+      full_name:
+        type: string
+      id:
+        type: string
+      role_id:
+        type: string
+      student_ids:
+        items:
+          type: string
+        type: array
+      telephone:
+        type: string
+    type: object
+  handlers.CuratorsHandler:
+    type: object
+  handlers.ResetPasswordRequest:
+    properties:
+      email:
+        type: string
+    required:
+    - email
+    type: object
+  handlers.SetNewPassword:
+    properties:
+      new_password:
+        type: string
+      reset_token:
+        type: string
+    required:
+    - new_password
+    - reset_token
+    type: object
+  handlers.UpdateRequest:
+    properties:
+      title:
+        type: string
+    type: object
+  handlers.createLessonsrequest:
+    properties:
+      course_id:
+        type: string
+      date:
+        description: Опционально - если не указана, берем текущую дату
+        type: string
+      feedback:
+        type: string
+      feedback_date:
+        type: string
+      student_id:
+        type: string
+    type: object
+  handlers.createStudentRequest:
+    properties:
+      course_id:
+        type: string
+      courses:
+        items:
+          type: string
+        type: array
+      created_at:
+        type: string
+      crm_link:
+        type: string
+      curator_id:
+        type: string
+      full_name:
+        type: string
+      is_active:
+        type: string
+      parent_name:
+        type: string
+      parent_phone_number:
+        type: string
+      phone_number:
+        type: string
+      platform_link:
+        type: string
+    type: object
+  handlers.updateLessonsrequest:
+    properties:
+      course_id:
+        type: string
+      date:
+        type: string
+      feedback:
+        type: string
+      lessons_status:
+        type: string
+      payment_status:
+        type: string
+      student_id:
+        type: string
+    type: object
+  handlers.updateStudentRequest:
+    properties:
+      course_id:
+        type: string
+      courses:
+        items:
+          type: string
+        type: array
+      created_at:
+        type: string
+      crm_link:
+        type: string
+      curator_id:
+        type: string
+      full_name:
+        type: string
+      is_active:
+        type: string
+      parent_name:
+        type: string
+      parent_phone_number:
+        type: string
+      phone_number:
+        type: string
+      platform_link:
+        type: string
+    type: object
+  models.ApiError:
+    properties:
+      error:
+        type: string
+    type: object
+  models.Course:
+    properties:
+      id:
+        type: string
+      title:
+        type: string
+    type: object
+  models.ErrorResponse:
+    properties:
+      error:
+        example: error description
+        type: string
+    type: object
+  models.Lessons:
+    properties:
+      course_id:
+        type: string
+      created_at:
+        type: string
+      date:
+        type: string
+      feedback:
+        type: string
+      feedback_date:
+        type: string
+      id:
+        type: string
+      lessons_status:
+        type: string
+      payment_status:
+        type: string
+      student_id:
+        type: string
+    type: object
+  models.LoginResponse:
+    properties:
+      expires:
+        example: 1672531200
+        type: integer
+      role:
+        example: admin
+        type: string
+      token:
+        example: eyJhbGciOi...
+        type: string
+    type: object
+  models.MessageResponse:
+    properties:
+      message:
+        example: success message
+        type: string
+    type: object
+  models.Student:
+    properties:
+      course_id:
+        type: string
+      courses:
+        items:
+          type: string
+        type: array
+      created_at:
+        type: string
+      crm_link:
+        type: string
+      curator_id:
+        type: string
+      full_name:
+        type: string
+      id:
+        type: string
+      is_active:
+        type: string
+      parent_name:
+        type: string
+      parent_phone_number:
+        type: string
+      phone_number:
+        type: string
+      platform_link:
+        type: string
+    type: object
+  models.TokenResponse:
+    properties:
+      expires:
+        example: 1672531200
+        type: integer
+      token:
+        example: eyJhbGciOi...
+        type: string
+    type: object
+  models.User:
+    properties:
+      email:
+        type: string
+      full_name:
+        type: string
+      id:
+        type: string
+      passwordHash:
+        type: string
+      resetTokenExpiresAt:
+        type: string
+      roleID:
+        type: string
+      telephone:
+        type: string
+    type: object
 info:
   contact: {}
-paths: {}
+paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Вход в систему с email и паролем
+      parameters:
+      - description: Данные для входа
+        in: body
+        name: credentials
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.AuthRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.LoginResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ApiError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ApiError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ApiError'
+      summary: Аутентификация пользователя
+      tags:
+      - auth
+  /auth/logout:
+    post:
+      description: Завершает текущую сессию пользователя
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ApiError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ApiError'
+      security:
+      - ApiKeyAuth: []
+      summary: Выход из системы
+      tags:
+      - auth
+  /auth/new-password:
+    post:
+      consumes:
+      - application/json
+      description: Устанавливает новый пароль после сброса. Требует валидный токен
+        сброса.
+      parameters:
+      - description: Данные для сброса пароля
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.SetNewPassword'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Пароль успешно обновлен
+          schema:
+            $ref: '#/definitions/models.MessageResponse'
+        "400":
+          description: Неверный формат запроса
+          schema:
+            $ref: '#/definitions/models.ApiError'
+        "401":
+          description: Недействительный или просроченный токен
+          schema:
+            $ref: '#/definitions/models.ApiError'
+        "500":
+          description: Ошибка сервера при обновлении пароля
+          schema:
+            $ref: '#/definitions/models.ApiError'
+      summary: Установка нового пароля
+      tags:
+      - auth
+  /auth/refresh:
+    post:
+      description: Обновляет JWT токен с помощью refresh токена из cookie
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.TokenResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Обновление токена
+      tags:
+      - auth
+  /auth/reset-password:
+    post:
+      consumes:
+      - application/json
+      description: Инициирует процесс сброса пароля по email. Отправляет токен сброса
+        на указанный email (если он существует в системе).
+      parameters:
+      - description: Email для сброса пароля
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.ResetPasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Всегда возвращает успех, даже если email не существует (security
+            through obscurity)
+          schema:
+            $ref: '#/definitions/models.MessageResponse'
+        "400":
+          description: Неверный формат email
+          schema:
+            $ref: '#/definitions/models.ApiError'
+        "500":
+          description: Ошибка сервера при обработке запроса
+          schema:
+            $ref: '#/definitions/models.ApiError'
+      summary: Запрос сброса пароля
+      tags:
+      - auth
+  /courses:
+    get:
+      description: Возвращает список всех курсов
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Course'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ApiError'
+      summary: Получить все курсы
+      tags:
+      - courses
+    post:
+      consumes:
+      - application/json
+      description: Создает новый курс
+      parameters:
+      - description: Данные курса
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.CourseRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ApiError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ApiError'
+      summary: Создать курс
+      tags:
+      - courses
+  /courses/{courseId}:
+    delete:
+      description: Удаляет курс по ID
+      parameters:
+      - description: ID курса
+        in: path
+        name: courseId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ApiError'
+      summary: Удалить курс
+      tags:
+      - courses
+    get:
+      description: Возвращает курс по его идентификатору
+      parameters:
+      - description: ID курса
+        in: path
+        name: courseId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Course'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ApiError'
+      summary: Получить курс по ID
+      tags:
+      - courses
+    put:
+      consumes:
+      - application/json
+      description: Обновляет курс по ID
+      parameters:
+      - description: ID курса
+        in: path
+        name: courseId
+        required: true
+        type: string
+      - description: Обновлённые данные
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.UpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ApiError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ApiError'
+      summary: Обновить курс
+      tags:
+      - courses
+  /curators/add-course:
+    post:
+      consumes:
+      - application/json
+      description: Assigns a course to a curator
+      parameters:
+      - description: Course assignment data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.CuratorsHandler'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Course added successfully
+          schema:
+            properties:
+              message:
+                type: string
+            type: object
+        "400":
+          description: Invalid request data
+          schema:
+            $ref: '#/definitions/models.ApiError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/models.ApiError'
+        "404":
+          description: Curator or course not found
+          schema:
+            $ref: '#/definitions/models.ApiError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/models.ApiError'
+      security:
+      - ApiKeyAuth: []
+      summary: Add course to curator
+      tags:
+      - curators
+  /curators/add-student:
+    post:
+      consumes:
+      - application/json
+      description: Assigns a student to a curator
+      parameters:
+      - description: Student assignment data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.CuratorsHandler'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Student added successfully
+          schema:
+            properties:
+              message:
+                type: string
+            type: object
+        "400":
+          description: Invalid request data
+          schema:
+            $ref: '#/definitions/models.ApiError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/models.ApiError'
+        "404":
+          description: Curator or student not found
+          schema:
+            $ref: '#/definitions/models.ApiError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/models.ApiError'
+      security:
+      - ApiKeyAuth: []
+      summary: Add student to curator
+      tags:
+      - curators
+  /curators/remove-course:
+    post:
+      consumes:
+      - application/json
+      description: Unassigns a course from a curator
+      parameters:
+      - description: Course unassignment data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.CuratorsHandler'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Course removed successfully
+          schema:
+            properties:
+              message:
+                type: string
+            type: object
+        "400":
+          description: Invalid request data
+          schema:
+            $ref: '#/definitions/models.ApiError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/models.ApiError'
+        "404":
+          description: Assignment not found
+          schema:
+            $ref: '#/definitions/models.ApiError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/models.ApiError'
+      security:
+      - ApiKeyAuth: []
+      summary: Remove course from curator
+      tags:
+      - curators
+  /curators/remove-student:
+    post:
+      consumes:
+      - application/json
+      description: Unassigns a student from a curator
+      parameters:
+      - description: Student unassignment data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.CuratorsHandler'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Student removed successfully
+          schema:
+            properties:
+              message:
+                type: string
+            type: object
+        "400":
+          description: Invalid request data
+          schema:
+            $ref: '#/definitions/models.ApiError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/models.ApiError'
+        "404":
+          description: Assignment not found
+          schema:
+            $ref: '#/definitions/models.ApiError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/models.ApiError'
+      security:
+      - ApiKeyAuth: []
+      summary: Remove student from curator
+      tags:
+      - curators
+  /lessons:
+    get:
+      description: Возвращает список уроков с возможностью фильтрации по статусам
+      parameters:
+      - description: Фильтр по статусу оплаты
+        enum:
+        - оплачен
+        - не оплачен
+        in: query
+        name: payment_status
+        type: string
+      - description: Фильтр по статусу урока
+        enum:
+        - запланирован
+        - проведен
+        in: query
+        name: lessons_status
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Список уроков
+          schema:
+            items:
+              $ref: '#/definitions/models.Lessons'
+            type: array
+        "500":
+          description: Ошибка сервера
+          schema:
+            $ref: '#/definitions/models.ApiError'
+      summary: Получить список уроков
+      tags:
+      - lessons
+    post:
+      consumes:
+      - application/json
+      description: Создает новый урок для студента по курсу. Дата в формате DD.MM.YYYY.
+        Если дата не указана, используется текущая дата.
+      parameters:
+      - description: Данные для создания урока
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.createLessonsrequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Урок успешно создан
+          schema:
+            properties:
+              id:
+                type: string
+            type: object
+        "400":
+          description: Неверный формат данных
+          schema:
+            $ref: '#/definitions/models.ApiError'
+        "500":
+          description: Ошибка при создании урока
+          schema:
+            $ref: '#/definitions/models.ApiError'
+      summary: Создать урок
+      tags:
+      - lessons
+  /lessons/{lessonsId}:
+    delete:
+      description: Удаляет урок по его UUID
+      parameters:
+      - description: UUID урока
+        format: uuid
+        in: path
+        name: lessonsId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Урок успешно удален
+        "400":
+          description: Неверный формат UUID
+          schema:
+            $ref: '#/definitions/models.ApiError'
+        "404":
+          description: Урок не найден
+          schema:
+            $ref: '#/definitions/models.ApiError'
+      summary: Удалить урок
+      tags:
+      - lessons
+    get:
+      description: Возвращает информацию об уроке по его UUID
+      parameters:
+      - description: UUID урока
+        format: uuid
+        in: path
+        name: lessonsId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Данные урока
+          schema:
+            $ref: '#/definitions/models.Lessons'
+        "400":
+          description: Неверный формат UUID
+          schema:
+            $ref: '#/definitions/models.ApiError'
+        "404":
+          description: Урок не найден
+          schema:
+            $ref: '#/definitions/models.ApiError'
+      summary: Получить урок по ID
+      tags:
+      - lessons
+    put:
+      consumes:
+      - application/json
+      description: Обновляет данные урока. Дата в формате DD.MM.YYYY. Статус можно
+        не указывать - он определится автоматически по дате.
+      parameters:
+      - description: UUID урока
+        format: uuid
+        in: path
+        name: lessonsId
+        required: true
+        type: string
+      - description: Обновленные данные урока
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.updateLessonsrequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Урок успешно обновлен
+        "400":
+          description: Неверные входные данные
+          schema:
+            $ref: '#/definitions/models.ApiError'
+        "404":
+          description: Урок не найден
+          schema:
+            $ref: '#/definitions/models.ApiError'
+        "500":
+          description: Ошибка при обновлении
+          schema:
+            $ref: '#/definitions/models.ApiError'
+      summary: Обновить урок
+      tags:
+      - lessons
+  /students:
+    get:
+      description: Возвращает список студентов с возможностью фильтрации
+      parameters:
+      - description: Поиск по ФИО
+        in: query
+        name: search
+        type: string
+      - description: Фильтр по ID курса
+        format: uuid
+        in: query
+        name: course
+        type: string
+      - description: Фильтр по активности
+        enum:
+        - активен
+        - неактивен
+        in: query
+        name: is_active
+        type: string
+      - description: Фильтр по ID куратора
+        format: uuid
+        in: query
+        name: curator_id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Список студентов
+          schema:
+            items:
+              $ref: '#/definitions/models.Student'
+            type: array
+        "500":
+          description: Ошибка сервера
+          schema:
+            $ref: '#/definitions/models.ApiError'
+      summary: Получить список студентов
+      tags:
+      - Students
+    post:
+      consumes:
+      - application/json
+      description: Создает запись о студенте с указанием курсов, контактных данных
+        и ссылок
+      parameters:
+      - description: Данные студента
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.createStudentRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: ID созданного студента
+          schema:
+            properties:
+              id:
+                type: string
+            type: object
+        "400":
+          description: Неверный формат данных
+          schema:
+            $ref: '#/definitions/models.ApiError'
+        "500":
+          description: Ошибка сервера
+          schema:
+            $ref: '#/definitions/models.ApiError'
+      summary: Создать нового студента
+      tags:
+      - Students
+  /students/{studentId}:
+    delete:
+      description: Удаляет запись о студенте из системы
+      parameters:
+      - description: UUID студента
+        format: uuid
+        in: path
+        name: studentId
+        required: true
+        type: string
+      responses:
+        "204":
+          description: Студент успешно удален
+        "400":
+          description: Неверный формат UUID
+          schema:
+            $ref: '#/definitions/models.ApiError'
+        "404":
+          description: Студент не найден
+          schema:
+            $ref: '#/definitions/models.ApiError'
+        "500":
+          description: Ошибка сервера
+          schema:
+            $ref: '#/definitions/models.ApiError'
+      summary: Удалить студента
+      tags:
+      - Students
+    get:
+      description: Возвращает полную информацию о студенте по его ID
+      parameters:
+      - description: UUID студента
+        format: uuid
+        in: path
+        name: studentId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Данные студента
+          schema:
+            $ref: '#/definitions/models.Student'
+        "400":
+          description: Неверный формат UUID
+          schema:
+            $ref: '#/definitions/models.ApiError'
+        "404":
+          description: Студент не найден
+          schema:
+            $ref: '#/definitions/models.ApiError'
+      summary: Получить данные студента
+      tags:
+      - Students
+    put:
+      consumes:
+      - application/json
+      description: Обновляет информацию о существующем студенте
+      parameters:
+      - description: UUID студента
+        format: uuid
+        in: path
+        name: studentId
+        required: true
+        type: string
+      - description: Обновленные данные
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.updateStudentRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Данные успешно обновлены
+        "400":
+          description: Неверный формат данных
+          schema:
+            $ref: '#/definitions/models.ApiError'
+        "404":
+          description: Студент не найден
+          schema:
+            $ref: '#/definitions/models.ApiError'
+        "500":
+          description: Ошибка сервера
+          schema:
+            $ref: '#/definitions/models.ApiError'
+      summary: Обновить данные студента
+      tags:
+      - Students
+  /users:
+    get:
+      description: Возвращает список всех пользователей с возможностью фильтрации
+        по роли
+      parameters:
+      - description: Фильтр по ID роли
+        format: uuid
+        in: query
+        name: role
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Список пользователей
+          schema:
+            items:
+              $ref: '#/definitions/models.User'
+            type: array
+        "400":
+          description: Неверный формат UUID
+          schema:
+            $ref: '#/definitions/models.ApiError'
+        "500":
+          description: Ошибка сервера
+          schema:
+            $ref: '#/definitions/models.ApiError'
+      summary: Получить список пользователей
+      tags:
+      - Users
+    post:
+      consumes:
+      - application/json
+      description: Создает нового пользователя с указанной ролью. Для роли 'curator'
+        автоматически создает связанную запись.
+      parameters:
+      - description: Данные для создания пользователя
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.CreateRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Пользователь создан
+          schema:
+            properties:
+              message:
+                type: string
+            type: object
+        "400":
+          description: Неверные данные
+          schema:
+            $ref: '#/definitions/models.ApiError'
+        "409":
+          description: Email уже существует
+          schema:
+            $ref: '#/definitions/models.ApiError'
+        "500":
+          description: Ошибка сервера
+          schema:
+            $ref: '#/definitions/models.ApiError'
+      summary: Создать пользователя
+      tags:
+      - Users
+  /users/{id}:
+    delete:
+      description: Удаляет пользователя из системы
+      parameters:
+      - description: ID пользователя
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: Пользователь удален
+        "400":
+          description: Неверный формат UUID
+          schema:
+            $ref: '#/definitions/models.ApiError'
+        "404":
+          description: Пользователь не найден
+          schema:
+            $ref: '#/definitions/models.ApiError'
+        "500":
+          description: Ошибка сервера
+          schema:
+            $ref: '#/definitions/models.ApiError'
+      summary: Удалить пользователя
+      tags:
+      - Users
+    get:
+      description: Возвращает информацию о пользователе по его UUID
+      parameters:
+      - description: ID пользователя
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Данные пользователя
+          schema:
+            $ref: '#/definitions/models.User'
+        "400":
+          description: Неверный формат UUID
+          schema:
+            $ref: '#/definitions/models.ApiError'
+        "404":
+          description: Пользователь не найден
+          schema:
+            $ref: '#/definitions/models.ApiError'
+      summary: Получить пользователя по ID
+      tags:
+      - Users
+    put:
+      consumes:
+      - application/json
+      description: Обновляет информацию о существующем пользователе
+      parameters:
+      - description: ID пользователя
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Обновленные данные пользователя
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.User'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Данные обновлены
+        "400":
+          description: Неверные данные
+          schema:
+            $ref: '#/definitions/models.ApiError'
+        "404":
+          description: Пользователь не найден
+          schema:
+            $ref: '#/definitions/models.ApiError'
+        "500":
+          description: Ошибка сервера
+          schema:
+            $ref: '#/definitions/models.ApiError'
+      summary: Обновить пользователя
+      tags:
+      - Users
+  /users/curators:
+    get:
+      description: Возвращает список всех кураторов с дополнительной информацией (студенты
+        и курсы)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Список кураторов с деталями
+          schema:
+            items:
+              $ref: '#/definitions/handlers.CuratorResponse'
+            type: array
+        "500":
+          description: Ошибка сервера
+          schema:
+            $ref: '#/definitions/models.ApiError'
+      summary: Получить список кураторов
+      tags:
+      - Users
+  /users/managers:
+    get:
+      description: Возвращает список всех пользователей с ролью 'manager'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Список менеджеров
+          schema:
+            items:
+              $ref: '#/definitions/models.User'
+            type: array
+        "500":
+          description: Ошибка сервера
+          schema:
+            $ref: '#/definitions/models.ApiError'
+      summary: Получить список менеджеров
+      tags:
+      - Users
 swagger: "2.0"

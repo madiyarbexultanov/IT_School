@@ -5,7 +5,6 @@ import (
 	"it_school/logger"
 	"it_school/models"
 	"it_school/repositories"
-	"log"
 	"net/http"
 	"time"
 
@@ -21,11 +20,12 @@ type createStudentRequest struct {
 	PhoneNumber       *string   `json:"phone_number"`
 	ParentName        string    `json:"parent_name"`
 	ParentPhoneNumber *string   `json:"parent_phone_number"`
-	//CuratorId         uuid.UUID  `json:"curator_id"`
+	CuratorId         uuid.UUID  `json:"curator_id"`
 	Courses      []string `json:"courses"`
 	PlatformLink string   `json:"platform_link"`
 	CrmLink      string   `json:"crm_link"`
 	CreatedAt    *string  `json:"created_at"`
+    IsActive     *string  `json:"is_active"`
 }
 
 type updateStudentRequest struct {
@@ -34,7 +34,7 @@ type updateStudentRequest struct {
 	PhoneNumber       *string   `json:"phone_number"`
 	ParentName        string    `json:"parent_name"`
 	ParentPhoneNumber *string   `json:"parent_phone_number"`
-	//CuratorId         uuid.UUID  `json:"curator_id"`
+	CuratorId         uuid.UUID  `json:"curator_id"`
 	Courses      []string `json:"courses"`
 	PlatformLink string   `json:"platform_link"`
 	CrmLink      string   `json:"crm_link"`
@@ -76,214 +76,313 @@ func formatPhoneNumber(input string, defaultRegion string) (string, error) {
 	return phonenumbers.Format(num, phonenumbers.INTERNATIONAL), nil
 }
 
-// @Summary Create new students
-// @Description Создание студента с курсами, номерами телефонов и ссылками
+// Create godoc
+// @Summary Создать нового студента
+// @Description Создает запись о студенте с указанием курсов, контактных данных и ссылок
 // @Tags Students
 // @Accept json
 // @Produce json
-// @Param student body createStudentRequest true "Информация о студенте"
-// @Success 200 {object} map[string]string "id студента"
-// @Failure 400 {object} models.ApiError
-// @Failure 500 {object} models.ApiError
+// @Param request body createStudentRequest true "Данные студента" example={"course_id": "550e8400-e29b-41d4-a716-446655440000", "full_name": "Иванов Иван", "phone_number": "+77071234567", "parent_name": "Иванова Мария", "parent_phone_number": "+77076543210", "curator_id": "550e8400-e29b-41d4-a716-446655440000", "courses": ["math", "physics"], "platform_link": "https://platform.example.com", "crm_link": "https://crm.example.com", "created_at": "01.01.2023", "is_active": "активен"}
+// @Success 201 {object} object{id=string} "ID созданного студента"
+// @Failure 400 {object} models.ApiError "Неверный формат данных"
+// @Failure 500 {object} models.ApiError "Ошибка сервера"
 // @Router /students [post]
 func (h *StudentsHandlers) Create(c *gin.Context) {
-	var request createStudentRequest
-	err := c.Bind(&request)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewApiError("couldn´t create student request"))
-		return
-	}
+    logger := logger.GetLogger()
+    var request createStudentRequest
+    
+    if err := c.ShouldBindJSON(&request); err != nil {
+        logger.Warn("Invalid student create request format", zap.Error(err))
+        c.JSON(http.StatusBadRequest, models.NewApiError("Invalid request data"))
+        return
+    }
 
-	formattedPhone, err := formatPhoneNumber(*request.PhoneNumber, "KZ")
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewApiError("Invalid student's phone number"))
-		return
-	}
+    logger.Info("Creating student", 
+        zap.String("full_name", request.FullName),
+        zap.Any("courses", request.Courses),
+    )
 
-	formattedParentsPhone, err := formatPhoneNumber(*request.ParentPhoneNumber, "KZ")
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewApiError("Invalid parent's phone number"))
-		return
-	}
+    formattedPhone, err := formatPhoneNumber(*request.PhoneNumber, "KZ")
+    if err != nil {
+        logger.Warn("Invalid student phone format", 
+            zap.String("phone", *request.PhoneNumber),
+            zap.Error(err),
+        )
+        c.JSON(http.StatusBadRequest, models.NewApiError("Invalid student's phone number"))
+        return
+    }
 
-	CreatedAt, err := time.Parse("02.01.2006", *request.CreatedAt)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewApiError("Invalid created date format. Use DD.MM.YYYY"))
-		return
-	}
+    formattedParentsPhone, err := formatPhoneNumber(*request.ParentPhoneNumber, "KZ")
+    if err != nil {
+        logger.Warn("Invalid parent phone format", 
+            zap.String("phone", *request.ParentPhoneNumber),
+            zap.Error(err),
+        )
+        c.JSON(http.StatusBadRequest, models.NewApiError("Invalid parent's phone number"))
+        return
+    }
 
-	students := models.Student{
-		CourseId:          request.CourseId,
-		FullName:          request.FullName,
-		PhoneNumber:       &formattedPhone,
-		ParentName:        request.ParentName,
-		ParentPhoneNumber: &formattedParentsPhone,
-		Courses:           request.Courses,
-		PlatformLink:      request.PlatformLink,
-		CrmLink:           request.CrmLink,
-		CreatedAt:         &CreatedAt,
-	}
+    CreatedAt, err := time.Parse("02.01.2006", *request.CreatedAt)
+    if err != nil {
+        logger.Warn("Invalid date format", 
+            zap.String("date", *request.CreatedAt),
+            zap.Error(err),
+        )
+        c.JSON(http.StatusBadRequest, models.NewApiError("Invalid created date format. Use DD.MM.YYYY"))
+        return
+    }
 
-	id, err := h.StudentsRepo.Create(c, students)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, err)
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{
-		"id": id,
-	})
+    student := models.Student{
+        CourseId:          request.CourseId,
+        FullName:          request.FullName,
+        PhoneNumber:       &formattedPhone,
+        ParentName:        request.ParentName,
+        ParentPhoneNumber: &formattedParentsPhone,
+        Courses:           request.Courses,
+        PlatformLink:      request.PlatformLink,
+        CrmLink:           request.CrmLink,
+        CreatedAt:         &CreatedAt,
+        IsActive:          request.IsActive,
+    }
+
+    id, err := h.StudentsRepo.Create(c, student)
+    if err != nil {
+        logger.Error("Failed to create student", 
+            zap.Error(err),
+            zap.Any("student_data", student),
+        )
+        c.JSON(http.StatusInternalServerError, models.NewApiError("Failed to create student"))
+        return
+    }
+
+    logger.Info("Student created successfully", zap.String("student_id", id.String()))
+    c.JSON(http.StatusOK, gin.H{"id": id})
 }
 
-// @Summary Найти студента по ID
-// @Description Получение информации о студенте по UUID
+// FindById godoc
+// @Summary Получить данные студента
+// @Description Возвращает полную информацию о студенте по его ID
 // @Tags Students
 // @Produce json
-// @Param studentId path string true "ID студента"
-// @Success 200 {object} models.Student
-// @Failure 400 {object} models.ApiError
+// @Param studentId path string true "UUID студента" format(uuid)
+// @Success 200 {object} models.Student "Данные студента"
+// @Failure 400 {object} models.ApiError "Неверный формат UUID"
+// @Failure 404 {object} models.ApiError "Студент не найден"
 // @Router /students/{studentId} [get]
 func (h *StudentsHandlers) FindById(c *gin.Context) {
-	idStr := c.Param("studentId")
-	studentId, err := uuid.Parse(idStr)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewApiError("Invalid students id"))
-		return
-	}
+    logger := logger.GetLogger()
+    idStr := c.Param("studentId")
+    
+    studentId, err := uuid.Parse(idStr)
+    if err != nil {
+        logger.Warn("Invalid student ID format", 
+            zap.String("student_id", idStr),
+            zap.Error(err),
+        )
+        c.JSON(http.StatusBadRequest, models.NewApiError("Invalid student id"))
+        return
+    }
 
-	Students, err := h.StudentsRepo.FindById(c, studentId)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewApiError(err.Error()))
-		return
-	}
-	c.JSON(http.StatusOK, Students)
+    logger.Debug("Looking for student", zap.String("student_id", studentId.String()))
+    
+    student, err := h.StudentsRepo.FindById(c, studentId)
+    if err != nil {
+        logger.Error("Student not found", 
+            zap.String("student_id", studentId.String()),
+            zap.Error(err),
+        )
+        c.JSON(http.StatusNotFound, models.NewApiError("Student not found"))
+        return
+    }
+
+    logger.Debug("Student found", zap.String("student_id", studentId.String()))
+    c.JSON(http.StatusOK, student)
 }
 
+// Update godoc
 // @Summary Обновить данные студента
-// @Description Обновление информации о студенте по UUID
+// @Description Обновляет информацию о существующем студенте
 // @Tags Students
 // @Accept json
-// @Param studentId path string true "ID студента"
-// @Param student body updateStudentRequest true "Обновлённые данные студента"
-// @Success 200
-// @Failure 400 {object} models.ApiError
-// @Failure 500 {object} models.ApiError
+// @Produce json
+// @Param studentId path string true "UUID студента" format(uuid)
+// @Param request body updateStudentRequest true "Обновленные данные" example={"course_id": "550e8400-e29b-41d4-a716-446655440000", "full_name": "Иванов Иван", "phone_number": "+77071234567", "parent_name": "Иванова Мария", "parent_phone_number": "+77076543210", "curator_id": "550e8400-e29b-41d4-a716-446655440000", "courses": ["math", "physics"], "platform_link": "https://platform.example.com", "crm_link": "https://crm.example.com", "created_at": "01.01.2023", "is_active": "активен"}
+// @Success 200 "Данные успешно обновлены"
+// @Failure 400 {object} models.ApiError "Неверный формат данных"
+// @Failure 404 {object} models.ApiError "Студент не найден"
+// @Failure 500 {object} models.ApiError "Ошибка сервера"
 // @Router /students/{studentId} [put]
 func (h *StudentsHandlers) Update(c *gin.Context) {
-	l := logger.GetLogger()
-	idStr := c.Param("studentId")
-	studentId, err := uuid.Parse(idStr)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewApiError("Invalid Seasons Id"))
-		return
-	}
+    logger := logger.GetLogger()
+    idStr := c.Param("studentId")
+    
+    studentId, err := uuid.Parse(idStr)
+    if err != nil {
+        logger.Warn("Invalid student ID format", 
+            zap.String("input_id", idStr),
+            zap.Error(err),
+        )
+        c.JSON(http.StatusBadRequest, models.NewApiError("Invalid student Id"))
+        return
+    }
 
-	_, err = h.StudentsRepo.FindById(c, studentId)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewApiError(err.Error()))
-		return
-	}
+    logger.Info("Updating student", zap.String("student_id", studentId.String()))
 
-	var request updateStudentRequest
-	err = c.Bind(&request)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, "Invalid request payload")
-		return
-	}
+    var request updateStudentRequest
+    if err := c.ShouldBindJSON(&request); err != nil {
+        logger.Warn("Invalid update request format", 
+            zap.Error(err),
+            zap.String("student_id", studentId.String()),
+        )
+        c.JSON(http.StatusBadRequest, models.NewApiError("Invalid request payload"))
+        return
+    }
 
-	formattedPhone, err := formatPhoneNumber(*request.PhoneNumber, "KZ")
-	if err != nil {
-		log.Println("Error formatting phone number:", err)
-		c.JSON(http.StatusBadRequest, models.NewApiError("Invalid student's phone number"))
-		return
-	}
+    formattedPhone, err := formatPhoneNumber(*request.PhoneNumber, "KZ")
+    if err != nil {
+        logger.Warn("Invalid student phone format in update", 
+            zap.String("phone", *request.PhoneNumber),
+            zap.Error(err),
+        )
+        c.JSON(http.StatusBadRequest, models.NewApiError("Invalid student's phone number"))
+        return
+    }
 
-	formattedParentsPhone, err := formatPhoneNumber(*request.ParentPhoneNumber, "KZ")
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewApiError("Invalid parent's phone number"))
-		return
-	}
+    formattedParentsPhone, err := formatPhoneNumber(*request.ParentPhoneNumber, "KZ")
+    if err != nil {
+        logger.Warn("Invalid parent phone format in update", 
+            zap.String("phone", *request.ParentPhoneNumber),
+            zap.Error(err),
+        )
+        c.JSON(http.StatusBadRequest, models.NewApiError("Invalid parent's phone number"))
+        return
+    }
 
-	CreatedAt, err := time.Parse("02.01.2006", *request.CreatedAt)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewApiError("Invalid created date format. Use DD.MM.YYYY"))
-		return
-	}
-	students := models.Student{
-		Id:                studentId,
-		CourseId:          request.CourseId,
-		FullName:          request.FullName,
-		PhoneNumber:       &formattedPhone,
-		ParentName:        request.ParentName,
-		ParentPhoneNumber: &formattedParentsPhone,
-		Courses:           request.Courses,
-		PlatformLink:      request.PlatformLink,
-		CrmLink:           request.CrmLink,
-		CreatedAt:         &CreatedAt,
-		IsActive:          request.IsActive,
-	}
-	err = h.StudentsRepo.Update(c, students)
-	if err != nil {
-		l.Error("Ошибка при обновлении студента", zap.Error(err))
-		c.JSON(http.StatusInternalServerError, models.NewApiError("Failed to update student"))
-		return
-	}
-	c.Status(http.StatusOK)
+    CreatedAt, err := time.Parse("02.01.2006", *request.CreatedAt)
+    if err != nil {
+        logger.Warn("Invalid date format in update", 
+            zap.String("date", *request.CreatedAt),
+            zap.Error(err),
+        )
+        c.JSON(http.StatusBadRequest, models.NewApiError("Invalid created date format. Use DD.MM.YYYY"))
+        return
+    }
+
+    student := models.Student{
+        Id:                studentId,
+        CourseId:          request.CourseId,
+        FullName:          request.FullName,
+        PhoneNumber:       &formattedPhone,
+        ParentName:        request.ParentName,
+        ParentPhoneNumber: &formattedParentsPhone,
+        Courses:           request.Courses,
+        PlatformLink:      request.PlatformLink,
+        CrmLink:           request.CrmLink,
+        CreatedAt:         &CreatedAt,
+        IsActive:          request.IsActive,
+    }
+
+    if err := h.StudentsRepo.Update(c, student); err != nil {
+        logger.Error("Failed to update student", 
+            zap.String("student_id", studentId.String()),
+            zap.Error(err),
+            zap.Any("update_data", student),
+        )
+        c.JSON(http.StatusInternalServerError, models.NewApiError("Failed to update student"))
+        return
+    }
+
+    logger.Info("Student updated successfully", zap.String("student_id", studentId.String()))
+    c.Status(http.StatusOK)
 }
 
+// FindAll godoc
 // @Summary Получить список студентов
-// @Description Список студентов с фильтрами по имени, курсу, активности и куратору
+// @Description Возвращает список студентов с возможностью фильтрации
 // @Tags Students
 // @Produce json
-// @Param search query string false "Поиск по имени"
-// @Param course query string false "Фильтр по курсу"
-// @Param is_active query string false "Фильтр по активности"
-// @Param curator_id query string false "ID куратора"
-// @Success 200 {array} models.Student
-// @Failure 500
+// @Param search query string false "Поиск по ФИО"
+// @Param course query string false "Фильтр по ID курса" format(uuid)
+// @Param is_active query string false "Фильтр по активности" Enums(активен, неактивен)
+// @Param curator_id query string false "Фильтр по ID куратора" format(uuid)
+// @Success 200 {array} models.Student "Список студентов"
+// @Failure 500 {object} models.ApiError "Ошибка сервера"
 // @Router /students [get]
 func (h *StudentsHandlers) FindAll(c *gin.Context) {
+    logger := logger.GetLogger()
 
-	filters := models.StudentFilters{
-		Search:    c.Query("search"),
-		Course:    c.Query("course"),
-		IsActive:  c.Query("is_active"),
-		CuratorId: c.Query("curator_id"),
-	}
+    filters := models.StudentFilters{
+        Search:    c.Query("search"),
+        Course:    c.Query("course"),
+        IsActive:  c.Query("is_active"),
+        CuratorId: c.Query("curator_id"),
+    }
 
-	Seasons, err := h.StudentsRepo.FindAll(c, filters)
-	if err != nil {
-		c.Status(http.StatusInternalServerError)
-		return
-	}
-	c.JSON(http.StatusOK, Seasons)
+    logger.Debug("Fetching students with filters", 
+        zap.Any("filters", filters),
+    )
+
+    students, err := h.StudentsRepo.FindAll(c, filters)
+    if err != nil {
+        logger.Error("Failed to fetch students", 
+            zap.Error(err),
+            zap.Any("filters", filters),
+        )
+        c.JSON(http.StatusInternalServerError, models.NewApiError("Failed to fetch students"))
+        return
+    }
+
+    logger.Debug("Students fetched successfully", 
+        zap.Int("count", len(students)),
+    )
+    c.JSON(http.StatusOK, students)
 }
 
+
+// Delete godoc
 // @Summary Удалить студента
-// @Description Удаление студента по UUID
+// @Description Удаляет запись о студенте из системы
 // @Tags Students
-// @Param studentId path string true "ID студента"
-// @Success 200
-// @Failure 400 {object} models.ApiError
+// @Param studentId path string true "UUID студента" format(uuid)
+// @Success 204 "Студент успешно удален"
+// @Failure 400 {object} models.ApiError "Неверный формат UUID"
+// @Failure 404 {object} models.ApiError "Студент не найден"
+// @Failure 500 {object} models.ApiError "Ошибка сервера"
 // @Router /students/{studentId} [delete]
 func (h *StudentsHandlers) Delete(c *gin.Context) {
-	idStr := c.Param("studentId")
-	studentId, err := uuid.Parse(idStr)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewApiError("Invalid students Id"))
-		return
-	}
+    logger := logger.GetLogger()
+    idStr := c.Param("studentId")
+    
+    studentId, err := uuid.Parse(idStr)
+    if err != nil {
+        logger.Warn("Invalid student ID format", 
+            zap.String("input_id", idStr),
+            zap.Error(err),
+        )
+        c.JSON(http.StatusBadRequest, models.NewApiError("Invalid student id"))
+        return
+    }
 
-	_, err = h.StudentsRepo.FindById(c, studentId)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewApiError(err.Error()))
-		return
-	}
+    logger.Info("Deleting student", zap.String("student_id", studentId.String()))
 
-	err = h.StudentsRepo.Delete(c, studentId)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewApiError(err.Error()))
-		return
-	}
+    if _, err := h.StudentsRepo.FindById(c, studentId); err != nil {
+        logger.Warn("Student not found for deletion", 
+            zap.String("student_id", studentId.String()),
+            zap.Error(err),
+        )
+        c.JSON(http.StatusNotFound, models.NewApiError("Student not found"))
+        return
+    }
 
-	c.Status(http.StatusOK)
+    if err := h.StudentsRepo.Delete(c, studentId); err != nil {
+        logger.Error("Failed to delete student", 
+            zap.String("student_id", studentId.String()),
+            zap.Error(err),
+        )
+        c.JSON(http.StatusInternalServerError, models.NewApiError("Failed to delete student"))
+        return
+    }
+
+    logger.Info("Student deleted successfully", zap.String("student_id", studentId.String()))
+    c.Status(http.StatusOK)
 }

@@ -6,11 +6,11 @@ import (
 	"it_school/models"
 	"it_school/repositories"
 	"net/http"
-	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
 
@@ -22,7 +22,7 @@ func AuthMiddleware(sessionsRepo *repositories.SessionsRepository, usersRepo *re
 		// Извлекаем заголовок Authorization из запроса
 		authHeader := c.GetHeader("Authorization")
 
-		var userID int
+		var userID uuid.UUID
 		var isSessionAuth bool
 
 		// Если Authorization header присутствует, пробуем аутентифицировать через JWT
@@ -62,7 +62,7 @@ func AuthMiddleware(sessionsRepo *repositories.SessionsRepository, usersRepo *re
 			}
 
 			// Преобразуем строку в int для идентификатора пользователя
-			userID, err = strconv.Atoi(subject)
+			userID, err = uuid.Parse(subject)
 			if err != nil {
 				logger.Warn("Invalid user ID format in token")
 				c.JSON(http.StatusUnauthorized, models.NewApiError("invalid user ID format"))
@@ -115,7 +115,7 @@ func AuthMiddleware(sessionsRepo *repositories.SessionsRepository, usersRepo *re
 
 
 		logger.Info("User authenticated", 
-			zap.Int("userID", userID),
+			zap.Any("userID", userID),
 			zap.String("role", role.Name),
 			zap.Bool("isSessionAuth", isSessionAuth))
 		

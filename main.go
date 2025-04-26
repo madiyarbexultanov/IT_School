@@ -8,6 +8,7 @@ import (
 	"it_school/logger"
 	"it_school/middlewares"
 	"it_school/repositories"
+	"it_school/utils"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -59,6 +60,8 @@ func main() {
 		logger.Fatal("Database connection failed", zap.Error(err))
 	}
 
+
+
 	r.Use(func(c *gin.Context) {
 		c.Set("db", conn)
 		c.Next()
@@ -75,14 +78,22 @@ func main() {
 	UsersRepository := repositories.NewRUsersRepository(conn)
 	SessionsRepository := repositories.NewSessionsRepository(conn)
 	RolesRepository := repositories.NewRoleRepository(conn)
+	CuratorsRepository := repositories.NewCuratorsRepository(conn)
+	CourseRepository := repositories.NewCourseRepository(conn)
+
+	if err := utils.SeedAdminAndRoles(RolesRepository, UsersRepository); err != nil {
+		logger.Fatal("Couldn't create admin", zap.Error(err))
+	}
 
 	StudentsRepository := repositories.NewStudentsRepository(conn)
 	LessonsRepository := repositories.NewLessonsRepository(conn)
 	StudentsHandlers := handlers.NewStudentsHandlers(StudentsRepository)
 	LessonsHandlers := handlers.NewLessonsHandlers(LessonsRepository)
+	CuratorsHandlers := handlers.NewCuratorsHandler(CuratorsRepository)
+	CourseHandlers := handlers.NewCourseHandlers(CourseRepository)
 
 	authHandler := handlers.NewAuthHandler(UsersRepository, SessionsRepository, RolesRepository)
-	UserHandler := handlers.NewUserHandlers(UsersRepository)
+	UserHandler := handlers.NewUserHandlers(UsersRepository, CuratorsRepository, RolesRepository)
 	resetPasswordHandler := handlers.NewResetPasswordHandler(AuthRepository, UsersRepository)
 
 	// Маршруты для аутентификации
@@ -100,15 +111,21 @@ func main() {
 	privateRoutes := r.Group("/")
 	privateRoutes.Use(middlewares.AuthMiddleware(SessionsRepository, UsersRepository, RolesRepository))
 
+	// Роуты настроек. Доступ имеет только Админ
 	settingsRoutes := privateRoutes.Group("/settings")
 	settingsRoutes.Use(middlewares.PermissionMiddleware("access_settings"))
 
 	// Роуты для работы со студентами внутри настроек
 	settingsRoutes.POST("/students", StudentsHandlers.Create)
-	settingsRoutes.GET("/students/:studentId", StudentsHandlers.FindById)
 	settingsRoutes.PUT("/students/:studentId", StudentsHandlers.Update)
-	settingsRoutes.GET("/students", StudentsHandlers.FindAll)
 	settingsRoutes.DELETE("/students/:studentId", StudentsHandlers.Delete)
+
+	// Роуты для работы с курсами внутри настроек
+	settingsRoutes.POST("/courses", CourseHandlers.Create)
+	settingsRoutes.GET("/courses/:courseId", CourseHandlers.FindById)
+	settingsRoutes.GET("/courses", CourseHandlers.FindAll)
+	settingsRoutes.PUT("/courses/:courseId", CourseHandlers.Update)
+	settingsRoutes.DELETE("/courses/:courseId", CourseHandlers.Delete)
 
 	// Роуты для работы с уроками внутри настроек
 	settingsRoutes.POST("/lessons", LessonsHandlers.Create)
@@ -124,9 +141,27 @@ func main() {
 	settingsRoutes.PUT("/users/:userId", UserHandler.Update)
 	settingsRoutes.DELETE("/users/:userId", UserHandler.Delete)
 
-	settingsRoutes.GET("/managers", UserHandler.FindManagers)
+	// Получение списков Менеджеров и Кураторов
+	settingsRoutes.GET("/users/managers", UserHandler.FindManagers)
+	settingsRoutes.GET("/users/curators", UserHandler.FindCurators)
 
-	settingsRoutes.GET("/curators", UserHandler.FindCurators)
+	// Фунеции Куратора для работы со студентами и курсами
+	curatorsRoutes := privateRoutes.Group("/curators")
+	curatorsRoutes.Use(middlewares.PermissionMiddleware("access_curator"))
+	{
+		curatorsRoutes.POST("/add-student", CuratorsHandlers.AddStudent)
+		curatorsRoutes.POST("/remove-student", CuratorsHandlers.RemoveStudent)
+		curatorsRoutes.POST("/add-course", CuratorsHandlers.AddCourse)
+		curatorsRoutes.POST("/remove-course", CuratorsHandlers.RemoveCourse)
+	}
+
+	// Функции Менеджера для просмотра студентов
+	managerRoutes := privateRoutes.Group("/manager")
+	managerRoutes.Use(middlewares.PermissionMiddleware("access_manager"))
+	{
+		managerRoutes.GET("/students", StudentsHandlers.FindAll)
+		managerRoutes.GET("/students/:studentId", StudentsHandlers.FindById)
+	}
 
 	docs.SwaggerInfo.BasePath = "/"
 	r.GET("/swagger/*any", swagger.WrapHandler(swaggerfiles.Handler))
@@ -170,7 +205,7 @@ func loadConfig() error {
 }
 
 func connectToDb() (*pgxpool.Pool, error) {
-	conn, err := pgxpool.New(context.Background(), "postgres://postgres:123456@localhost:5432/it_school")
+	conn, err := pgxpool.New(context.Background(), config.Config.DbConnectionString)
 	if err != nil {
 		return nil, err
 	}

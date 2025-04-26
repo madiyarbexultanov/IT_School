@@ -4,7 +4,7 @@ import (
 	"context"
 	"it_school/models"
 
-
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -24,9 +24,9 @@ func (r *SessionsRepository) CreateSession(c context.Context, session models.Ses
 	return err
 }
 
-func (r *SessionsRepository) GetSession(c context.Context, refreshToken string) (models.Session, int, error) {
+func (r *SessionsRepository) GetSession(c context.Context, refreshToken string) (models.Session, uuid.UUID, error) {
     var session models.Session
-    var roleID int
+    var roleID uuid.UUID
 
     err := r.db.QueryRow(c,
         `SELECT s.id, s.user_id, s.refresh_token, s.expires_at, u.role_id 

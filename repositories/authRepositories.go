@@ -5,6 +5,7 @@ import (
 	"it_school/models"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -32,13 +33,13 @@ func (r *AuthRepository) GetUserByResetToken(c context.Context, resetToken strin
 	return &user, nil
 }
 
-func (r *AuthRepository) ClearResetToken(c context.Context, userID int) error {
+func (r *AuthRepository) ClearResetToken(c context.Context, userID uuid.UUID) error {
 	query := `UPDATE users SET reset_token = NULL, reset_token_expires_at = NULL WHERE id = $1`
 	_, err := r.db.Exec(c, query, userID)
 	return err
 }
 
-func (r *AuthRepository) UpdatePassword(c context.Context, userID int, hashedPassword string) error {
+func (r *AuthRepository) UpdatePassword(c context.Context, userID uuid.UUID, hashedPassword string) error {
 	query := `UPDATE users SET password = $1, reset_token = NULL WHERE id = $2`
 	_, err := r.db.Exec(c, query, hashedPassword, userID)
 	return err

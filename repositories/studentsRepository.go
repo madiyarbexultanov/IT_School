@@ -23,8 +23,8 @@ func (r *StudentsRepository) Create(c context.Context, student models.Student) (
 	l := logger.GetLogger()
 	student.Id = uuid.New()
 
-	row := r.db.QueryRow(c, `INSERT INTO students(id, course_id, full_name, phone_number, parent_name, parent_phone_number, curator_id, courses, platform_link, crm_link, created_at) 
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) 
+	row := r.db.QueryRow(c, `INSERT INTO students(id, course_id, full_name, phone_number, parent_name, parent_phone_number, curator_id, courses, platform_link, crm_link, created_at, is_active) 
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) 
     RETURNING id`,
 		student.Id,
 		student.CourseId,
@@ -37,6 +37,7 @@ func (r *StudentsRepository) Create(c context.Context, student models.Student) (
 		student.PlatformLink,
 		student.CrmLink,
 		student.CreatedAt,
+		student.IsActive,
 	)
 
 	err := row.Scan(&student.Id)
@@ -49,75 +50,85 @@ func (r *StudentsRepository) Create(c context.Context, student models.Student) (
 }
 
 func (r *StudentsRepository) FindAll(c context.Context, filters models.StudentFilters) ([]models.Student, error) {
-	sql := `SELECT 
-	s.id,
-	s.course_id, 
-	s.full_name, 
-	s.phone_number, 
-	s.parent_name, 
-	s.parent_phone_number, 
-	s.curator_id, 
-	s.courses, 
-	s.platform_link, 
-	s.crm_link, 
-	s.created_at,
-	s.is_active
-	FROM students s where 1=1`
+    sql := `SELECT 
+        s.id,
+        s.course_id, 
+        s.full_name, 
+        s.phone_number, 
+        s.parent_name, 
+        s.parent_phone_number, 
+        s.curator_id, 
+        s.courses, 
+        s.platform_link, 
+        s.crm_link, 
+        s.created_at,
+        s.is_active
+    FROM students s
+    WHERE 1=1`
+    
+    params := pgx.NamedArgs{}
 
-	params := pgx.NamedArgs{}
+    if filters.Search != "" {
+        sql += " AND s.full_name ILIKE @search"
+        params["search"] = "%" + filters.Search + "%"
+    }
 
-	if filters.Search != "" {
-		sql += " AND (s.full_name ILIKE @search OR s.email ILIKE @search)"
-		params["search"] = "%" + filters.Search + "%"
-	}
+    if filters.Course != "" {
+        courseUUID, err := uuid.Parse(filters.Course)
+        if err != nil {
+            return nil, err
+        }
+        sql += " AND s.course_id = @course"
+        params["course"] = courseUUID
+    }
 
-	if filters.Course != "" {
-		sql += " AND @course = ANY(s.courses)"
-		params["course"] = filters.Course
-	}
+    if filters.IsActive != "" {
+        sql += " AND s.is_active = @is_active"
+        params["is_active"] = filters.IsActive
+    }
 
-	if filters.IsActive != "" {
-		sql += " AND s.is_active = @is_active"
-		isActive := filters.IsActive == "true"
-		params["is_active"] = isActive
-	}
+    if filters.CuratorId != "" {
+        curatorUUID, err := uuid.Parse(filters.CuratorId)
+        if err != nil {
+            return nil, err
+        }
+        sql += " AND s.curator_id = @curator_id"
+        params["curator_id"] = curatorUUID
+    }
 
-	if filters.CuratorId != "" {
-		sql += " AND s.curator_id = @curator_id"
-		params["curator_id"] = filters.CuratorId
-	}
+    rows, err := r.db.Query(c, sql, params)
+    if err != nil {
+        return nil, err
+    }
+    defer rows.Close()
 
-	rows, err := r.db.Query(c, sql, params)
-	defer rows.Close()
-	if err != nil {
-		return nil, err
-	}
+    students := make([]models.Student, 0)
 
-	students := make([]models.Student, 0)
+    for rows.Next() {
+        var student models.Student
+        err := rows.Scan(
+            &student.Id,
+            &student.CourseId,
+            &student.FullName,
+            &student.PhoneNumber,
+            &student.ParentName,
+            &student.ParentPhoneNumber,
+            &student.CuratorId,
+            &student.Courses,
+            &student.PlatformLink,
+            &student.CrmLink,
+            &student.CreatedAt,
+            &student.IsActive,
+        )
+        if err != nil {
+            return nil, err
+        }
+        students = append(students, student)
+    }
 
-	for rows.Next() {
-		var student models.Student
-		err := rows.Scan(
-			&student.Id,
-			&student.CourseId,
-			&student.FullName,
-			&student.PhoneNumber,
-			&student.ParentName,
-			&student.ParentPhoneNumber,
-			&student.CuratorId,
-			&student.Courses,
-			&student.PlatformLink,
-			&student.CrmLink,
-			&student.CreatedAt,
-			&student.IsActive,
-		)
-		if err != nil {
-			return nil, err
-		}
-		students = append(students, student)
-	}
-	return students, nil
+    return students, nil
 }
+
 
 func (r *StudentsRepository) FindById(c context.Context, studentId uuid.UUID) (models.Student, error) {
 	sql := `SELECT 
@@ -179,19 +190,16 @@ func (r *StudentsRepository) Update(c context.Context, updateStudents models.Stu
 	_, err = tx.Exec(c, `
 	UPDATE students
 	SET 
-		course_id = $1,
-		full_name = $2,
-		phone_number = $3,
-		parent_name = $4,
-		parent_phone_number = $5,
-		curator_id = $6,
-		courses = $7,
-		platform_link = $8,
-		crm_link = $9,
-		created_at = $10,
-		is_active = $11
-	WHERE id = $12`,
-		updateStudents.CourseId,
+		full_name = $1,
+		phone_number = $2,
+		parent_name = $3,
+		parent_phone_number = $4,
+		curator_id = $5,
+		courses = $6,
+		platform_link = $7,
+		crm_link = $8,
+		created_at = $9
+	WHERE id = $10`,
 		updateStudents.FullName,
 		updateStudents.PhoneNumber,
 		updateStudents.ParentName,
@@ -201,7 +209,6 @@ func (r *StudentsRepository) Update(c context.Context, updateStudents models.Stu
 		updateStudents.PlatformLink,
 		updateStudents.CrmLink,
 		updateStudents.CreatedAt,
-		updateStudents.IsActive,
 		updateStudents.Id)
 
 	if err != nil {

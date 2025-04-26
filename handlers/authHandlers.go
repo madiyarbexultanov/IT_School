@@ -8,11 +8,11 @@ import (
 	"it_school/repositories"
 	"it_school/utils"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
 
@@ -35,6 +35,18 @@ func NewAuthHandler(usersRepo *repositories.UsersRepository, sessionsRepo *repos
 	}
 }
 
+// Login godoc
+// @Summary Аутентификация пользователя
+// @Description Вход в систему с email и паролем
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param credentials body AuthRequest true "Данные для входа"
+// @Success 200 {object} models.LoginResponse
+// @Failure 400 {object} models.ApiError
+// @Failure 401 {object} models.ApiError
+// @Failure 500 {object} models.ApiError
+// @Router /auth/login [post]
 func (h *AuthHandler) Login(c *gin.Context) {
     logger := logger.GetLogger()
     var req AuthRequest
@@ -62,7 +74,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
     // Получаем роль пользователя
     role, err := h.rolesRepo.GetRoleByID(c.Request.Context(), user.RoleID)
     if err != nil {
-        logger.Error("Failed to get user role", zap.Int("user_id", user.Id), zap.Error(err))
+        logger.Error("Failed to get user role", zap.String("user_id", user.Id.String()), zap.Error(err))
         c.JSON(http.StatusInternalServerError, models.NewApiError("Couldn't find role"))
         return
     }
@@ -70,7 +82,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
     // Генерация JWT токена
     token, err := h.generateJWTToken(c.Request.Context(), user.Id, user.RoleID)
     if err != nil {
-        logger.Error("Failed to generate JWT token", zap.Int("user_id", user.Id), zap.Error(err))
+        logger.Error("Failed to generate JWT token", zap.String("user_id", user.Id.String()), zap.Error(err))
         c.JSON(http.StatusInternalServerError, models.NewApiError("failed to generate token"))
         return
     }
@@ -78,7 +90,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
     // Генерация refresh токена
     refreshToken, err := utils.GenerateRefreshToken(user.Id)
     if err != nil {
-        logger.Error("Failed to generate refresh token", zap.Int("user_id", user.Id), zap.Error(err))
+        logger.Error("Failed to generate refresh token", zap.String("user_id", user.Id.String()), zap.Error(err))
         c.JSON(http.StatusInternalServerError, models.NewApiError("failed to generate refresh token"))
         return
     }
@@ -92,7 +104,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 
     // Сохраняем сессию в репозитории
     if err := h.sessionsRepo.CreateSession(c.Request.Context(), session); err != nil {
-        logger.Error("Failed to create session", zap.Int("user_id", user.Id), zap.Error(err))
+        logger.Error("Failed to create session", zap.String("user_id", user.Id.String()), zap.Error(err))
         c.JSON(http.StatusInternalServerError, models.NewApiError("failed to create session"))
         return
     }
@@ -100,7 +112,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
     // Устанавливаем cookie с refresh токеном
     c.SetCookie("session_token", refreshToken, int(session.ExpiresAt.Unix()), "/", "", false, true)
 
-    logger.Info("Successful login", zap.Int("user_id", user.Id), zap.String("role", role.Name))
+    logger.Info("Successful login", zap.String("user_id", user.Id.String()), zap.String("role", role.Name))
 
     // Ответ с JWT токеном и ролью пользователя
     c.JSON(http.StatusOK, gin.H{
@@ -110,6 +122,17 @@ func (h *AuthHandler) Login(c *gin.Context) {
     })
 }
 
+
+// Logout godoc
+// @Summary Выход из системы
+// @Description Завершает текущую сессию пользователя
+// @Tags auth
+// @Produce json
+// @Success 200 {object} models.MessageResponse
+// @Failure 400 {object} models.ApiError
+// @Failure 500 {object} models.ApiError
+// @Security ApiKeyAuth
+// @Router /auth/logout [post]
 func (h *AuthHandler) Logout(c *gin.Context) {
     logger := logger.GetLogger()
     // Получаем session token из cookie
@@ -136,9 +159,18 @@ func (h *AuthHandler) Logout(c *gin.Context) {
     c.JSON(http.StatusOK, gin.H{"message": "successfully logged out"})
 }
 
+
+// Refresh godoc
+// @Summary Обновление токена
+// @Description Обновляет JWT токен с помощью refresh токена из cookie
+// @Tags auth
+// @Produce json
+// @Success 200 {object} models.TokenResponse  // Убрано слово "object"
+// @Failure 401 {object} models.ErrorResponse // Используем ErrorResponse вместо ApiError
+// @Failure 500 {object} models.ErrorResponse
+// @Router /auth/refresh [post]
 func (h *AuthHandler) Refresh(c *gin.Context) {
     logger := logger.GetLogger()
-    // Получаем session token из cookie
     sessionToken, err := c.Cookie("session_token")
     if err != nil {
         logger.Warn("Refresh attempt without session token")
@@ -146,7 +178,6 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
         return
     }
 
-    // Получаем сессию по session token
     session, roleID, err := h.sessionsRepo.GetSession(c.Request.Context(), sessionToken)
     if err != nil {
         logger.Warn("Invalid session token", zap.String("session_token", sessionToken), zap.Error(err))
@@ -160,58 +191,53 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
         return
     }
 
-    // Генерация нового JWT токена
     token, err := h.generateJWTToken(c.Request.Context(), session.UserID, roleID)
     if err != nil {
         logger.Error("Failed to generate JWT token", 
-            zap.Int("user_id", session.UserID), 
+            zap.String("user_id", session.UserID.String()),  
             zap.Error(err))
         c.JSON(http.StatusInternalServerError, models.NewApiError("failed to generate token"))
         return
     }
 
-    // Генерация нового refresh токена
     newRefreshToken, err := utils.GenerateRefreshToken(session.UserID)
     if err != nil {
         logger.Error("Failed to generate refresh token", 
-            zap.Int("user_id", session.UserID), 
+            zap.String("user_id", session.UserID.String()),  
             zap.Error(err))
         c.JSON(http.StatusInternalServerError, models.NewApiError("failed to generate refresh token"))
         return
     }
 
-    // Обновляем сессию с новым refresh токеном и временем истечения
     session.RefreshToken = newRefreshToken
     session.ExpiresAt = time.Now().Add(time.Hour * 24 * 7)
 
-    // Сохраняем обновленную сессию
     if err := h.sessionsRepo.UpdateSession(c.Request.Context(), session); err != nil {
         logger.Error("Failed to update session", 
-            zap.Int("user_id", session.UserID), 
+            zap.String("user_id", session.UserID.String()),  
             zap.Error(err))
         c.JSON(http.StatusInternalServerError, models.NewApiError("failed to update session"))
         return
     }
 
-    // Устанавливаем новый session token в cookie
     c.SetCookie("session_token", newRefreshToken, int(session.ExpiresAt.Unix()), "/", "", false, true)
 
-    logger.Info("Tokens refreshed successfully", zap.Int("user_id", session.UserID))
+    logger.Info("Tokens refreshed successfully", zap.String("user_id", session.UserID.String()))
 
-    // Ответ с новым токеном
     c.JSON(http.StatusOK, gin.H{
         "token":   token,
-        "expires": time.Now().Add(time.Hour * 1).Unix(), // Время истечения нового токена
+        "expires": time.Now().Add(time.Hour * 1).Unix(),
     })
 }
 
-func (h *AuthHandler) generateJWTToken(c context.Context, userID, roleID int) (string, error) {
+
+func (h *AuthHandler) generateJWTToken(c context.Context, userID, roleID uuid.UUID) (string, error) {
     logger := logger.GetLogger()
     // Находим пользователя по его ID
     user, err := h.usersRepo.FindById(c, userID)
     if err != nil {
         logger.Error("Failed to find user by ID", 
-            zap.Int("user_id", userID), 
+            zap.String("user_id", userID.String()), 
             zap.Error(err))
         return "", err
     }
@@ -220,20 +246,20 @@ func (h *AuthHandler) generateJWTToken(c context.Context, userID, roleID int) (s
     role, err := h.rolesRepo.GetRoleByID(c, user.RoleID)
     if err != nil {
         logger.Error("Failed to get user role", 
-            zap.Int("user_id", userID), 
+        zap.String("userID", userID.String()), 
             zap.Error(err))
         return "", err
     }
 
     // Создаем JWT токен с ролью и ID пользователя
     token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-        "sub":     strconv.Itoa(userID),
+        "sub":     userID.String(),
         "role":    role.Name,
         "role_id": roleID, // Добавлено role_id для более удобной проверки
         "exp":     time.Now().Add(time.Hour * 1).Unix(), // Время истечения токена — 1 час
     })
 
-    logger.Debug("JWT token generated", zap.Int("user_id", userID), zap.String("role", role.Name))
+    logger.Debug("JWT token generated", zap.String("userID", userID.String()), zap.String("role", role.Name))
 
     // Подписываем и возвращаем токен
     return token.SignedString([]byte(config.Config.JwtSecretKey))

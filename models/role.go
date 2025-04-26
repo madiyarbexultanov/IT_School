@@ -1,9 +1,13 @@
 package models
 
-import "encoding/json"
+import (
+	"encoding/json"
+
+	"github.com/google/uuid"
+)
 
 type Role struct {
-	Id          int             `json:"id"`
+	Id          uuid.UUID             `json:"id"`
 	Name        string          `json:"name"`
 	Permissions map[string]bool `json:"permissions"`
 }
