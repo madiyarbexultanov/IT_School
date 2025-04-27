@@ -2,8 +2,6 @@ package main
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"it_school/config"
 	"it_school/docs"
 	"it_school/handlers"
@@ -186,30 +184,24 @@ func main() {
 }
 
 func loadConfig() error {
-    // 1. Загружаем .env (если есть, но не падаем)
-    viper.SetConfigFile(".env")
-    _ = viper.ReadInConfig()
+	// Указываем путь к .env файлу
+	viper.SetConfigFile(".env")
 
-    // 2. Принудительно читаем DATABASE_URL из переменных окружения (Railway)
-    if dbURL := os.Getenv("DATABASE_URL"); dbURL != "" {
-        viper.Set("DB_CONNECTION_STRING", dbURL) // Переопределяем, если есть
-    }
+	// Загружаем переменные из .env, если он есть (необязательно)
+	_ = viper.ReadInConfig() // не падаем, если файла нет
 
-    // 3. Читаем остальные переменные
-    viper.AutomaticEnv()
+	// Читаем переменные окружения (например, из Railway)
+	viper.AutomaticEnv()
 
-    // 4. Проверяем, что строка подключения не пустая
-    var mapConfig config.MapConfig
-    if err := viper.Unmarshal(&mapConfig); err != nil {
-        return fmt.Errorf("config unmarshal error: %w", err)
-    }
+	// Мапим переменные в структуру
+	var mapConfig config.MapConfig
+	err := viper.Unmarshal(&mapConfig)
+	if err != nil {
+		return err
+	}
 
-    if mapConfig.DbConnectionString == "" {
-        return errors.New("DB_CONNECTION_STRING is empty (check DATABASE_URL in Railway)")
-    }
-
-    config.Config = &mapConfig
-    return nil
+	config.Config = &mapConfig
+	return nil
 }
 
 func connectToDb() (*pgxpool.Pool, error) {
