@@ -6,7 +6,7 @@ var Config *MapConfig
 
 type MapConfig struct {
 	AppHost            string  		 `mapstructure:"APP_HOST"`
-	DbConnectionString string  		 `mapstructure:"DB_CONNECTION_STRING"`
+	DbConnectionString string  		 `mapstructure:"DATABASE_URL"`
 	JwtSecretKey       string  		 `mapstructure:"JWT_SECRET_KEY"`
 	JwtExpiresIn       time.Duration `mapstructure:"JWT_EXPIRE_DURATION"`
 	SMTPEmail   	   string 		 `mapstructure:"SMTP_EMAIL"`
