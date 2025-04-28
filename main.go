@@ -55,10 +55,6 @@ func main() {
 	if err != nil {
 		logger.Fatal("Failed to load config", zap.Error(err))
 	}
-	
-	fmt.Println("→ os.Getenv    DATABASE_URL =", os.Getenv("DATABASE_URL"))
-	fmt.Println("→ viper.GetString DATABASE_URL =", viper.GetString("DATABASE_URL"))
-	fmt.Println("→ mapConfig.DbConnectionString =", config.Config.DbConnectionString)
 
 	logger.Info("Connecting to database...")
 	conn, err := connectToDb()
@@ -203,16 +199,16 @@ func loadConfig() error {
     // 2) А потом ДОСТАЁМ ЛЮБЫЕ ENV-ПЕРЕМЕННЫЕ прямо
     cfg.DbConnectionString = viper.GetString("DATABASE_URL")
 
-    cfg.JwtSecretKey       = viper.GetString("JWT_SECRET_KEY")
-    cfg.JwtExpiresIn = viper.GetString("JWT_EXPIRE_DURATION")
-    cfg.Initial_Password = viper.GetString("INITIAL_PASSWORD")
-    cfg.Admin_Name = viper.GetString("ADMIN_NAME")
-    cfg.Admin_Mail = viper.GetString("ADMIN_MAIL")
-    cfg.Admin_Phone = viper.GetString("ADMIN_PHONE")
-    cfg.SMTPPassword   	   = viper.GetString("SMTP_PASSWORD")
-    cfg.SMTPEmail	   = viper.GetString("SMTP_EMAIL")
-    cfg.SMTPHost           = viper.GetString("SMTP_HOST")
-    cfg.SMTPPort           = viper.GetString("SMTP_PORT")
+    cfg.JwtSecretKey      	= viper.GetString("JWT_SECRET_KEY")
+    cfg.JwtExpiresIn 		= viper.GetDuration("JWT_EXPIRE_DURATION")
+    cfg.Initial_Password 	= viper.GetString("INITIAL_PASSWORD")
+    cfg.Admin_Name 		= viper.GetString("ADMIN_NAME")
+    cfg.Admin_Mail 		= viper.GetString("ADMIN_MAIL")
+    cfg.Admin_Phone 		= viper.GetString("ADMIN_PHONE")
+    cfg.SMTPPassword   	   	= viper.GetString("SMTP_PASSWORD")
+    cfg.SMTPEmail	   	= viper.GetString("SMTP_EMAIL")
+    cfg.SMTPHost           	= viper.GetString("SMTP_HOST")
+    cfg.SMTPPort           	= viper.GetString("SMTP_PORT")
 	
     config.Config = &cfg
     return nil
