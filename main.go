@@ -10,6 +10,8 @@ import (
 	"it_school/repositories"
 	"it_school/utils"
 	"time"
+	"os"
+	"fmt"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -53,6 +55,10 @@ func main() {
 	if err != nil {
 		logger.Fatal("Failed to load config", zap.Error(err))
 	}
+	
+	fmt.Println("→ os.Getenv    DATABASE_URL =", os.Getenv("DATABASE_URL"))
+	fmt.Println("→ viper.GetString DATABASE_URL =", viper.GetString("DATABASE_URL"))
+	fmt.Println("→ mapConfig.DbConnectionString =", config.Config.DbConnectionString)
 
 	logger.Info("Connecting to database...")
 	conn, err := connectToDb()
