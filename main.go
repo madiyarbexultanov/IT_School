@@ -190,24 +190,21 @@ func main() {
 }
 
 func loadConfig() error {
-	// Указываем путь к .env файлу
-	viper.SetConfigFile(".env")
+    viper.SetConfigFile(".env")
+    _ = viper.ReadInConfig()   
+    viper.AutomaticEnv()      
 
-	// Загружаем переменные из .env, если он есть (необязательно)
-	_ = viper.ReadInConfig() // не падаем, если файла нет
+    // 1) Сначала распакуем всё из конфиг-файла
+    var cfg config.MapConfig
+    if err := viper.Unmarshal(&cfg); err != nil {
+        return err
+    }
 
-	// Читаем переменные окружения (например, из Railway)
-	viper.AutomaticEnv()
+    // 2) А потом ДОСТАЁМ ЛЮБЫЕ ENV-ПЕРЕМЕННЫЕ прямо
+    cfg.DbConnectionString = viper.GetString("DATABASE_URL")
 
-	// Мапим переменные в структуру
-	var mapConfig config.MapConfig
-	err := viper.Unmarshal(&mapConfig)
-	if err != nil {
-		return err
-	}
-
-	config.Config = &mapConfig
-	return nil
+    config.Config = &cfg
+    return nil
 }
 
 func connectToDb() (*pgxpool.Pool, error) {
