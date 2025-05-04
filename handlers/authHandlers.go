@@ -117,8 +117,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
     // Ответ с JWT токеном и ролью пользователя
     c.JSON(http.StatusOK, gin.H{
         "token":   token,
-        "role":    role.Name,
-        "expires": time.Now().Add(time.Hour * 1).Unix(), // Время истечения JWT токена (1 час)
+        "user":    user,
     })
 }
 
