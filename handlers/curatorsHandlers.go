@@ -32,7 +32,7 @@ func NewCuratorsHandler(repo *repositories.CuratorsRepository) *CuratorsHandler 
 // @Failure 403 {object} models.ApiError "Forbidden"
 // @Failure 404 {object} models.ApiError "Curator or student not found"
 // @Failure 500 {object} models.ApiError "Internal server error"
-// @Router /curators/add-student [post]
+// @Router /settings/curators/add-student [post]
 func (h *CuratorsHandler) AddStudent(c *gin.Context) {
 	logger := logger.GetLogger()
 	var req struct {
@@ -67,7 +67,7 @@ func (h *CuratorsHandler) AddStudent(c *gin.Context) {
 // @Failure 403 {object} models.ApiError "Forbidden"
 // @Failure 404 {object} models.ApiError "Assignment not found"
 // @Failure 500 {object} models.ApiError "Internal server error"
-// @Router /curators/remove-student [post]
+// @Router /settings/curators/remove-student [post]
 func (h *CuratorsHandler) RemoveStudent(c *gin.Context) {
 	logger := logger.GetLogger()
 	var req struct {
@@ -102,7 +102,7 @@ func (h *CuratorsHandler) RemoveStudent(c *gin.Context) {
 // @Failure 403 {object} models.ApiError "Forbidden"
 // @Failure 404 {object} models.ApiError "Curator or course not found"
 // @Failure 500 {object} models.ApiError "Internal server error"
-// @Router /curators/add-course [post]
+// @Router /settings/curators/add-course [post]
 func (h *CuratorsHandler) AddCourse(c *gin.Context) {
 	logger := logger.GetLogger()
 	var req struct {
@@ -137,7 +137,7 @@ func (h *CuratorsHandler) AddCourse(c *gin.Context) {
 // @Failure 403 {object} models.ApiError "Forbidden"
 // @Failure 404 {object} models.ApiError "Assignment not found"
 // @Failure 500 {object} models.ApiError "Internal server error"
-// @Router /curators/remove-course [post]
+// @Router /settings/curators/remove-course [post]
 func (h *CuratorsHandler) RemoveCourse(c *gin.Context) {
 	logger := logger.GetLogger()
 	var req struct {

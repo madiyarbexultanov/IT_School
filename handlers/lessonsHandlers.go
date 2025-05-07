@@ -48,7 +48,7 @@ func NewLessonsHandlers(LessonsRepo *repositories.LessonsRepository) *LessonsHan
 // @Success 201 {object} object{id=string} "Урок успешно создан"
 // @Failure 400 {object} models.ApiError "Неверный формат данных"
 // @Failure 500 {object} models.ApiError "Ошибка при создании урока"
-// @Router /lessons [post]
+// @Router /settings/lessons [post]
 func (h *LessonsHandlers) Create(c *gin.Context) {
 	var request createLessonsrequest
 if err := c.ShouldBindJSON(&request); err != nil {
@@ -129,7 +129,7 @@ if err := c.ShouldBindJSON(&request); err != nil {
 // @Success 200 {object} models.Lessons "Данные урока"
 // @Failure 400 {object} models.ApiError "Неверный формат UUID"
 // @Failure 404 {object} models.ApiError "Урок не найден"
-// @Router /lessons/{lessonsId} [get]
+// @Router /settings/lessons/{lessonsId} [get]
 func (h *LessonsHandlers) FindById(c *gin.Context) {
 	idStr := c.Param("lessonsId")
 	lessonsId, err := uuid.Parse(idStr)
@@ -155,7 +155,7 @@ func (h *LessonsHandlers) FindById(c *gin.Context) {
 // @Param lessons_status query string false "Фильтр по статусу урока" Enums(запланирован, проведен)
 // @Success 200 {array} models.Lessons "Список уроков"
 // @Failure 500 {object} models.ApiError "Ошибка сервера"
-// @Router /lessons [get]
+// @Router /settings/lessons [get]
 func (h *LessonsHandlers) FindAll(c *gin.Context) {
 	filters := models.LessonsFilters{
 		PaymentStatus: c.Query("payment_status"),
@@ -181,7 +181,7 @@ func (h *LessonsHandlers) FindAll(c *gin.Context) {
 // @Failure 400 {object} models.ApiError "Неверные входные данные"
 // @Failure 404 {object} models.ApiError "Урок не найден"
 // @Failure 500 {object} models.ApiError "Ошибка при обновлении"
-// @Router /lessons/{lessonsId} [put]
+// @Router /settings/lessons/{lessonsId} [put]
 func (h *LessonsHandlers) Update(c *gin.Context) {
 	idStr := c.Param("lessonsId")
 	lessonsId, err := uuid.Parse(idStr)
@@ -280,7 +280,7 @@ func (h *LessonsHandlers) Update(c *gin.Context) {
 // @Success 200 "Урок успешно удален"
 // @Failure 400 {object} models.ApiError "Неверный формат UUID"
 // @Failure 404 {object} models.ApiError "Урок не найден"
-// @Router /lessons/{lessonsId} [delete]
+// @Router /settings/lessons/{lessonsId} [delete]
 func (h *LessonsHandlers) Delete(c *gin.Context) {
 	idStr := c.Param("lessonsId")
 	lessonsId, err := uuid.Parse(idStr)
