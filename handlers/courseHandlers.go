@@ -34,7 +34,7 @@ func NewCourseHandlers(courseRepo *repositories.CourseRepository) *CourseHandler
 // @Success 200 {object} map[string]string
 // @Failure 400 {object} models.ApiError
 // @Failure 500 {object} models.ApiError
-// @Router /courses [post]
+// @Router /settings/courses [post]
 func (h *CourseHandlers) Create(c *gin.Context) {
 	var request CourseRequest
 	err := c.Bind(&request)
@@ -68,7 +68,7 @@ func (h *CourseHandlers) Create(c *gin.Context) {
 // @Success 200
 // @Failure 400 {object} models.ApiError
 // @Failure 500 {object} models.ApiError
-// @Router /courses/{courseId} [put]
+// @Router /settings/courses/{courseId} [put]
 func (h *CourseHandlers) Update(c *gin.Context) {
 	idStr := c.Param("courseId")
 	courseId, err := uuid.Parse(idStr)
@@ -112,7 +112,7 @@ func (h *CourseHandlers) Update(c *gin.Context) {
 // @Param courseId path string true "ID курса"
 // @Success 200 {object} models.Course
 // @Failure 400 {object} models.ApiError
-// @Router /courses/{courseId} [get]
+// @Router /settings/courses/{courseId} [get]
 func (h *CourseHandlers) FindById(c *gin.Context) {
 	idStr := c.Param("courseId")
 	courseId, err := uuid.Parse(idStr)
@@ -136,7 +136,7 @@ func (h *CourseHandlers) FindById(c *gin.Context) {
 // @Produce json
 // @Success 200 {array} models.Course
 // @Failure 400 {object} models.ApiError
-// @Router /courses [get]
+// @Router /settings/courses [get]
 func (h *CourseHandlers) FindAll(c *gin.Context) {
 	courses, err := h.courseRepo.FindAll(c)
 	if err != nil {
@@ -154,7 +154,7 @@ func (h *CourseHandlers) FindAll(c *gin.Context) {
 // @Param courseId path string true "ID курса"
 // @Success 200
 // @Failure 400 {object} models.ApiError
-// @Router /courses/{courseId} [delete]
+// @Router /settings/courses/{courseId} [delete]
 func (h *CourseHandlers) Delete(c *gin.Context) {
 	idStr := c.Param("courseId")
 	courseId, err := uuid.Parse(idStr)

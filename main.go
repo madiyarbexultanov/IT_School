@@ -211,7 +211,6 @@ func loadConfig() error {
     config.Config = &cfg
     return nil
 }
-
 func connectToDb() (*pgxpool.Pool, error) {
 	conn, err := pgxpool.New(context.Background(), config.Config.DbConnectionString)
 	if err != nil {

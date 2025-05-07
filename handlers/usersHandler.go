@@ -54,7 +54,7 @@ func NewUserHandlers(usersRepo *repositories.UsersRepository, curatorRepo *repos
 // @Success 200 {array} models.User "Список пользователей"
 // @Failure 400 {object} models.ApiError "Неверный формат UUID"
 // @Failure 500 {object} models.ApiError "Ошибка сервера"
-// @Router /users [get]
+// @Router /settings/users [get]
 func (h *UserHandler) FindAll(c *gin.Context) {
 	logger := logger.GetLogger()
 
@@ -89,7 +89,7 @@ func (h *UserHandler) FindAll(c *gin.Context) {
 // @Produce json
 // @Success 200 {array} models.User "Список менеджеров"
 // @Failure 500 {object} models.ApiError "Ошибка сервера"
-// @Router /users/managers [get]
+// @Router /settings/users/managers [get]
 func (h *UserHandler) FindManagers(c *gin.Context) {
 	logger := logger.GetLogger()
 
@@ -112,7 +112,7 @@ func (h *UserHandler) FindManagers(c *gin.Context) {
 // @Produce json
 // @Success 200 {array} handlers.CuratorResponse "Список кураторов с деталями"
 // @Failure 500 {object} models.ApiError "Ошибка сервера"
-// @Router /users/curators [get]
+// @Router /settings/users/curators [get]
 func (h *UserHandler) FindCurators(c *gin.Context) {
 	logger := logger.GetLogger()
 
@@ -158,7 +158,7 @@ func (h *UserHandler) FindCurators(c *gin.Context) {
 // @Success 200 {object} models.User "Данные пользователя"
 // @Failure 400 {object} models.ApiError "Неверный формат UUID"
 // @Failure 404 {object} models.ApiError "Пользователь не найден"
-// @Router /users/{id} [get]
+// @Router /settings/users/{id} [get]
 func (h *UserHandler) FindById(c *gin.Context) {
 	logger := logger.GetLogger()
 
@@ -193,7 +193,7 @@ func (h *UserHandler) FindById(c *gin.Context) {
 // @Failure 400 {object} models.ApiError "Неверные данные"
 // @Failure 409 {object} models.ApiError "Email уже существует"
 // @Failure 500 {object} models.ApiError "Ошибка сервера"
-// @Router /users [post]
+// @Router /settings/users [post]
 func (h *UserHandler) Create(c *gin.Context) {
 	logger := logger.GetLogger()
 
@@ -271,7 +271,7 @@ func (h *UserHandler) Create(c *gin.Context) {
 // @Failure 400 {object} models.ApiError "Неверные данные"
 // @Failure 404 {object} models.ApiError "Пользователь не найден"
 // @Failure 500 {object} models.ApiError "Ошибка сервера"
-// @Router /users/{id} [put]
+// @Router /settings/users/{id} [put]
 func (h *UserHandler) Update(c *gin.Context) {
 	logger := logger.GetLogger()
 
@@ -317,7 +317,7 @@ func (h *UserHandler) Update(c *gin.Context) {
 // @Failure 400 {object} models.ApiError "Неверный формат UUID"
 // @Failure 404 {object} models.ApiError "Пользователь не найден"
 // @Failure 500 {object} models.ApiError "Ошибка сервера"
-// @Router /users/{id} [delete]
+// @Router /settings/users/{id} [delete]
 func (h *UserHandler) Delete(c *gin.Context) {
 	logger := logger.GetLogger()
 

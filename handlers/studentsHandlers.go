@@ -86,7 +86,7 @@ func formatPhoneNumber(input string, defaultRegion string) (string, error) {
 // @Success 201 {object} object{id=string} "ID созданного студента"
 // @Failure 400 {object} models.ApiError "Неверный формат данных"
 // @Failure 500 {object} models.ApiError "Ошибка сервера"
-// @Router /students [post]
+// @Router /settings/students [post]
 func (h *StudentsHandlers) Create(c *gin.Context) {
     logger := logger.GetLogger()
     var request createStudentRequest
@@ -168,7 +168,7 @@ func (h *StudentsHandlers) Create(c *gin.Context) {
 // @Success 200 {object} models.Student "Данные студента"
 // @Failure 400 {object} models.ApiError "Неверный формат UUID"
 // @Failure 404 {object} models.ApiError "Студент не найден"
-// @Router /students/{studentId} [get]
+// @Router /settings/students/{studentId} [get]
 func (h *StudentsHandlers) FindById(c *gin.Context) {
     logger := logger.GetLogger()
     idStr := c.Param("studentId")
@@ -211,7 +211,7 @@ func (h *StudentsHandlers) FindById(c *gin.Context) {
 // @Failure 400 {object} models.ApiError "Неверный формат данных"
 // @Failure 404 {object} models.ApiError "Студент не найден"
 // @Failure 500 {object} models.ApiError "Ошибка сервера"
-// @Router /students/{studentId} [put]
+// @Router /settings/students/{studentId} [put]
 func (h *StudentsHandlers) Update(c *gin.Context) {
     logger := logger.GetLogger()
     idStr := c.Param("studentId")
@@ -307,7 +307,7 @@ func (h *StudentsHandlers) Update(c *gin.Context) {
 // @Param curator_id query string false "Фильтр по ID куратора" format(uuid)
 // @Success 200 {array} models.Student "Список студентов"
 // @Failure 500 {object} models.ApiError "Ошибка сервера"
-// @Router /students [get]
+// @Router /settings/students [get]
 func (h *StudentsHandlers) FindAll(c *gin.Context) {
     logger := logger.GetLogger()
 
@@ -348,7 +348,7 @@ func (h *StudentsHandlers) FindAll(c *gin.Context) {
 // @Failure 400 {object} models.ApiError "Неверный формат UUID"
 // @Failure 404 {object} models.ApiError "Студент не найден"
 // @Failure 500 {object} models.ApiError "Ошибка сервера"
-// @Router /students/{studentId} [delete]
+// @Router /settings/students/{studentId} [delete]
 func (h *StudentsHandlers) Delete(c *gin.Context) {
     logger := logger.GetLogger()
     idStr := c.Param("studentId")
