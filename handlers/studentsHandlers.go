@@ -21,7 +21,6 @@ type createStudentRequest struct {
 	ParentName        string    `json:"parent_name"`
 	ParentPhoneNumber *string   `json:"parent_phone_number"`
 	CuratorId         uuid.UUID  `json:"curator_id"`
-	Courses      []string `json:"courses"`
 	PlatformLink string   `json:"platform_link"`
 	CrmLink      string   `json:"crm_link"`
 	CreatedAt    *string  `json:"created_at"`
@@ -35,7 +34,6 @@ type updateStudentRequest struct {
 	ParentName        string    `json:"parent_name"`
 	ParentPhoneNumber *string   `json:"parent_phone_number"`
 	CuratorId         uuid.UUID  `json:"curator_id"`
-	Courses      []string `json:"courses"`
 	PlatformLink string   `json:"platform_link"`
 	CrmLink      string   `json:"crm_link"`
 	CreatedAt    *string  `json:"created_at"`
@@ -82,7 +80,7 @@ func formatPhoneNumber(input string, defaultRegion string) (string, error) {
 // @Tags Students
 // @Accept json
 // @Produce json
-// @Param request body createStudentRequest true "Данные студента" example={"course_id": "550e8400-e29b-41d4-a716-446655440000", "full_name": "Иванов Иван", "phone_number": "+77071234567", "parent_name": "Иванова Мария", "parent_phone_number": "+77076543210", "curator_id": "550e8400-e29b-41d4-a716-446655440000", "courses": ["math", "physics"], "platform_link": "https://platform.example.com", "crm_link": "https://crm.example.com", "created_at": "01.01.2023", "is_active": "активен"}
+// @Param request body createStudentRequest true "Данные студента" example={"course_id": "550e8400-e29b-41d4-a716-446655440000", "full_name": "Иванов Иван", "phone_number": "+77071234567", "parent_name": "Иванова Мария", "parent_phone_number": "+77076543210", "curator_id": "550e8400-e29b-41d4-a716-446655440000", "platform_link": "https://platform.example.com", "crm_link": "https://crm.example.com", "created_at": "01.01.2023", "is_active": "активен"}
 // @Success 201 {object} object{id=string} "ID созданного студента"
 // @Failure 400 {object} models.ApiError "Неверный формат данных"
 // @Failure 500 {object} models.ApiError "Ошибка сервера"
@@ -99,7 +97,6 @@ func (h *StudentsHandlers) Create(c *gin.Context) {
 
     logger.Info("Creating student", 
         zap.String("full_name", request.FullName),
-        zap.Any("courses", request.Courses),
     )
 
     formattedPhone, err := formatPhoneNumber(*request.PhoneNumber, "KZ")
@@ -138,7 +135,6 @@ func (h *StudentsHandlers) Create(c *gin.Context) {
         PhoneNumber:       &formattedPhone,
         ParentName:        request.ParentName,
         ParentPhoneNumber: &formattedParentsPhone,
-        Courses:           request.Courses,
         PlatformLink:      request.PlatformLink,
         CrmLink:           request.CrmLink,
         CreatedAt:         &CreatedAt,
@@ -156,7 +152,7 @@ func (h *StudentsHandlers) Create(c *gin.Context) {
     }
 
     logger.Info("Student created successfully", zap.String("student_id", id.String()))
-    c.JSON(http.StatusOK, gin.H{"id": id})
+    c.JSON(http.StatusCreated, gin.H{"id": id})
 }
 
 // FindById godoc
@@ -206,7 +202,7 @@ func (h *StudentsHandlers) FindById(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param studentId path string true "UUID студента" format(uuid)
-// @Param request body updateStudentRequest true "Обновленные данные" example={"course_id": "550e8400-e29b-41d4-a716-446655440000", "full_name": "Иванов Иван", "phone_number": "+77071234567", "parent_name": "Иванова Мария", "parent_phone_number": "+77076543210", "curator_id": "550e8400-e29b-41d4-a716-446655440000", "courses": ["math", "physics"], "platform_link": "https://platform.example.com", "crm_link": "https://crm.example.com", "created_at": "01.01.2023", "is_active": "активен"}
+// @Param request body updateStudentRequest true "Обновленные данные" example={"course_id": "550e8400-e29b-41d4-a716-446655440000", "full_name": "Иванов Иван", "phone_number": "+77071234567", "parent_name": "Иванова Мария", "parent_phone_number": "+77076543210", "curator_id": "550e8400-e29b-41d4-a716-446655440000", "platform_link": "https://platform.example.com", "crm_link": "https://crm.example.com", "created_at": "01.01.2023", "is_active": "активен"}
 // @Success 200 "Данные успешно обновлены"
 // @Failure 400 {object} models.ApiError "Неверный формат данных"
 // @Failure 404 {object} models.ApiError "Студент не найден"
@@ -275,7 +271,6 @@ func (h *StudentsHandlers) Update(c *gin.Context) {
         PhoneNumber:       &formattedPhone,
         ParentName:        request.ParentName,
         ParentPhoneNumber: &formattedParentsPhone,
-        Courses:           request.Courses,
         PlatformLink:      request.PlatformLink,
         CrmLink:           request.CrmLink,
         CreatedAt:         &CreatedAt,

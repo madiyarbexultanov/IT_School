@@ -80,15 +80,15 @@ func main() {
 	RolesRepository := repositories.NewRoleRepository(conn)
 	CuratorsRepository := repositories.NewCuratorsRepository(conn)
 	CourseRepository := repositories.NewCourseRepository(conn)
+	StudentsRepository := repositories.NewStudentsRepository(conn)
+	AttendanceRepository := repositories.NewAttendanceRepository(conn)
 
 	if err := utils.SeedAdminAndRoles(RolesRepository, UsersRepository); err != nil {
 		logger.Fatal("Couldn't create admin", zap.Error(err))
 	}
 
-	StudentsRepository := repositories.NewStudentsRepository(conn)
-	LessonsRepository := repositories.NewLessonsRepository(conn)
 	StudentsHandlers := handlers.NewStudentsHandlers(StudentsRepository)
-	LessonsHandlers := handlers.NewLessonsHandlers(LessonsRepository)
+	AttendanceHandlers := handlers.NewAttendanceHandlers(AttendanceRepository)
 	CuratorsHandlers := handlers.NewCuratorsHandler(CuratorsRepository)
 	CourseHandlers := handlers.NewCourseHandlers(CourseRepository)
 
@@ -127,13 +127,6 @@ func main() {
 	settingsRoutes.PUT("/courses/:courseId", CourseHandlers.Update)
 	settingsRoutes.DELETE("/courses/:courseId", CourseHandlers.Delete)
 
-	// Роуты для работы с уроками внутри настроек
-	settingsRoutes.POST("/lessons", LessonsHandlers.Create)
-	settingsRoutes.GET("/lessons/:lessonsId", LessonsHandlers.FindById)
-	settingsRoutes.GET("/lessons", LessonsHandlers.FindAll)
-	settingsRoutes.PUT("/lessons/:lessonsId", LessonsHandlers.Update)
-	settingsRoutes.DELETE("/lessons/:lessonsId", LessonsHandlers.Delete)
-
 	// Роуты для работы с пользователями внутри настроек
 	settingsRoutes.POST("/users", UserHandler.Create)
 	settingsRoutes.GET("/users/:userId", UserHandler.FindById)
@@ -144,6 +137,16 @@ func main() {
 	// Получение списков Менеджеров и Кураторов
 	settingsRoutes.GET("/users/managers", UserHandler.FindManagers)
 	settingsRoutes.GET("/users/curators", UserHandler.FindCurators)
+
+	settingsRoutes.DELETE("/attendance/:id", AttendanceHandlers.Delete)
+
+	attendanceGroup := privateRoutes.Group("/attendances")
+	
+	{
+		attendanceGroup.POST("", AttendanceHandlers.CreateAttendance)
+		attendanceGroup.GET("/:id", AttendanceHandlers.GetByStudent)
+		attendanceGroup.PUT("/:id", AttendanceHandlers.UpdateAttendance)
+	}
 
 	// Фунеции Куратора для работы со студентами и курсами
 	curatorsRoutes := privateRoutes.Group("/curators")
@@ -184,33 +187,27 @@ func main() {
 }
 
 func loadConfig() error {
-    viper.SetConfigFile(".env")
-    _ = viper.ReadInConfig()   
-    viper.AutomaticEnv()      
+	// Указываем путь к .env файлу
+	viper.SetConfigFile(".env")
 
-    // 1) Сначала распакуем всё из конфиг-файла
-    var cfg config.MapConfig
-    if err := viper.Unmarshal(&cfg); err != nil {
-        return err
-    }
+	// Загружаем переменные из .env, если он есть (необязательно)
+	_ = viper.ReadInConfig() // не падаем, если файла нет
 
-    // 2) А потом ДОСТАЁМ ЛЮБЫЕ ENV-ПЕРЕМЕННЫЕ прямо
-    cfg.DbConnectionString = viper.GetString("DATABASE_URL")
+	// Читаем переменные окружения (например, из Railway)
+	viper.AutomaticEnv()
 
-    cfg.JwtSecretKey      	= viper.GetString("JWT_SECRET_KEY")
-    cfg.JwtExpiresIn 		= viper.GetDuration("JWT_EXPIRE_DURATION")
-    cfg.Initial_Password 	= viper.GetString("INITIAL_PASSWORD")
-    cfg.Admin_Name 		= viper.GetString("ADMIN_NAME")
-    cfg.Admin_Mail 		= viper.GetString("ADMIN_MAIL")
-    cfg.Admin_Phone 		= viper.GetString("ADMIN_PHONE")
-    cfg.SMTPPassword   	   	= viper.GetString("SMTP_PASSWORD")
-    cfg.SMTPEmail	   	= viper.GetString("SMTP_EMAIL")
-    cfg.SMTPHost           	= viper.GetString("SMTP_HOST")
-    cfg.SMTPPort           	= viper.GetString("SMTP_PORT")
-	
-    config.Config = &cfg
-    return nil
+	// Мапим переменные в структуру
+	var mapConfig config.MapConfig
+	err := viper.Unmarshal(&mapConfig)
+	if err != nil {
+		return err
+	}
+
+	config.Config = &mapConfig
+	return nil
 }
+
+
 func connectToDb() (*pgxpool.Pool, error) {
 	conn, err := pgxpool.New(context.Background(), config.Config.DbConnectionString)
 	if err != nil {

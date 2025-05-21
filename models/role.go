@@ -7,7 +7,7 @@ import (
 )
 
 type Role struct {
-	Id          uuid.UUID             `json:"id"`
+	Id          uuid.UUID       `json:"id"`
 	Name        string          `json:"name"`
 	Permissions map[string]bool `json:"permissions"`
 }

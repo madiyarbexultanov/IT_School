@@ -14,7 +14,6 @@ type Student struct {
 	ParentName        string     `json:"parent_name"`
 	ParentPhoneNumber *string    `json:"parent_phone_number"`
 	CuratorId         *uuid.UUID `json:"curator_id"`
-	Courses           []string   `json:"courses"`
 	PlatformLink      string     `json:"platform_link"`
 	CrmLink           string     `json:"crm_link"`
 	CreatedAt         *time.Time `json:"created_at"`
