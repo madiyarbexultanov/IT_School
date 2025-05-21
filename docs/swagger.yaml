@@ -1,4 +1,47 @@
 definitions:
+  handlers.AttendanceFreezeInput:
+    properties:
+      comment:
+        type: string
+      end_date:
+        type: string
+      start_date:
+        type: string
+    type: object
+  handlers.AttendanceLessonInput:
+    properties:
+      curator_id:
+        type: string
+      date:
+        type: string
+      feedback:
+        type: string
+      feedback_date:
+        type: string
+      format:
+        type: string
+      lessons_status:
+        type: string
+    required:
+    - lessons_status
+    type: object
+  handlers.AttendanceProlongationInput:
+    properties:
+      amount:
+        type: number
+      comment:
+        type: string
+      date:
+        type: string
+      payment_type:
+        enum:
+        - оплата
+        - предоплата
+        - доплата
+        type: string
+    required:
+    - payment_type
+    type: object
   handlers.AuthRequest:
     properties:
       email:
@@ -13,6 +56,29 @@ definitions:
     properties:
       title:
         type: string
+    type: object
+  handlers.CreateAttendanceRequest:
+    properties:
+      course_id:
+        type: string
+      freeze:
+        $ref: '#/definitions/handlers.AttendanceFreezeInput'
+      lesson:
+        $ref: '#/definitions/handlers.AttendanceLessonInput'
+      prolongation:
+        $ref: '#/definitions/handlers.AttendanceProlongationInput'
+      student_id:
+        type: string
+      type:
+        enum:
+        - урок
+        - заморозка
+        - пролонгация
+        type: string
+    required:
+    - course_id
+    - student_id
+    - type
     type: object
   handlers.CreateRequest:
     properties:
@@ -72,20 +138,6 @@ definitions:
       title:
         type: string
     type: object
-  handlers.createLessonsrequest:
-    properties:
-      course_id:
-        type: string
-      date:
-        description: Опционально - если не указана, берем текущую дату
-        type: string
-      feedback:
-        type: string
-      feedback_date:
-        type: string
-      student_id:
-        type: string
-    type: object
   handlers.createStudentRequest:
     properties:
       course_id:
@@ -111,21 +163,6 @@ definitions:
       phone_number:
         type: string
       platform_link:
-        type: string
-    type: object
-  handlers.updateLessonsrequest:
-    properties:
-      course_id:
-        type: string
-      date:
-        type: string
-      feedback:
-        type: string
-      lessons_status:
-        type: string
-      payment_status:
-        type: string
-      student_id:
         type: string
     type: object
   handlers.updateStudentRequest:
@@ -171,27 +208,6 @@ definitions:
     properties:
       error:
         example: error description
-        type: string
-    type: object
-  models.Lessons:
-    properties:
-      course_id:
-        type: string
-      created_at:
-        type: string
-      date:
-        type: string
-      feedback:
-        type: string
-      feedback_date:
-        type: string
-      id:
-        type: string
-      lessons_status:
-        type: string
-      payment_status:
-        type: string
-      student_id:
         type: string
     type: object
   models.LoginResponse:
@@ -270,6 +286,113 @@ definitions:
 info:
   contact: {}
 paths:
+  /attendances:
+    post:
+      consumes:
+      - application/json
+      description: 'Добавляет новую запись: урок, заморозку или пролонгацию'
+      parameters:
+      - description: Данные посещаемости
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.CreateAttendanceRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ApiError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/models.ApiError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ApiError'
+      summary: Создать запись посещаемости
+      tags:
+      - attendance
+  /attendances/{id}:
+    put:
+      consumes:
+      - application/json
+      description: Обновляет запись посещаемости (урок, заморозка или пролонгация)
+      parameters:
+      - description: ID записи посещаемости
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Обновленные данные посещаемости
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.CreateAttendanceRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ApiError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/models.ApiError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.ApiError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ApiError'
+      summary: Обновить запись посещаемости
+      tags:
+      - attendance
+  /attendances/{student_id}:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает список всех посещений, заморозок и пролонгаций по студенту
+      parameters:
+      - description: UUID студента
+        in: path
+        name: student_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items: {}
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ApiError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ApiError'
+      summary: Получить посещаемость студента
+      tags:
+      - attendance
   /auth/login:
     post:
       consumes:
@@ -415,7 +538,38 @@ paths:
       summary: Запрос сброса пароля
       tags:
       - auth
-  /courses:
+  /settings/attendance/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Удаляет запись посещаемости по ID
+      parameters:
+      - description: ID записи посещаемости
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ApiError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.ApiError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ApiError'
+      summary: Удалить запись посещаемости
+      tags:
+      - attendance
+  /settings/courses:
     get:
       description: Возвращает список всех курсов
       produces:
@@ -465,7 +619,7 @@ paths:
       summary: Создать курс
       tags:
       - courses
-  /courses/{courseId}:
+  /settings/courses/{courseId}:
     delete:
       description: Удаляет курс по ID
       parameters:
@@ -540,7 +694,7 @@ paths:
       summary: Обновить курс
       tags:
       - courses
-  /curators/add-course:
+  /settings/curators/add-course:
     post:
       consumes:
       - application/json
@@ -583,7 +737,7 @@ paths:
       summary: Add course to curator
       tags:
       - curators
-  /curators/add-student:
+  /settings/curators/add-student:
     post:
       consumes:
       - application/json
@@ -626,7 +780,7 @@ paths:
       summary: Add student to curator
       tags:
       - curators
-  /curators/remove-course:
+  /settings/curators/remove-course:
     post:
       consumes:
       - application/json
@@ -669,7 +823,7 @@ paths:
       summary: Remove course from curator
       tags:
       - curators
-  /curators/remove-student:
+  /settings/curators/remove-student:
     post:
       consumes:
       - application/json
@@ -712,165 +866,7 @@ paths:
       summary: Remove student from curator
       tags:
       - curators
-  /lessons:
-    get:
-      description: Возвращает список уроков с возможностью фильтрации по статусам
-      parameters:
-      - description: Фильтр по статусу оплаты
-        enum:
-        - оплачен
-        - не оплачен
-        in: query
-        name: payment_status
-        type: string
-      - description: Фильтр по статусу урока
-        enum:
-        - запланирован
-        - проведен
-        in: query
-        name: lessons_status
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Список уроков
-          schema:
-            items:
-              $ref: '#/definitions/models.Lessons'
-            type: array
-        "500":
-          description: Ошибка сервера
-          schema:
-            $ref: '#/definitions/models.ApiError'
-      summary: Получить список уроков
-      tags:
-      - lessons
-    post:
-      consumes:
-      - application/json
-      description: Создает новый урок для студента по курсу. Дата в формате DD.MM.YYYY.
-        Если дата не указана, используется текущая дата.
-      parameters:
-      - description: Данные для создания урока
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/handlers.createLessonsrequest'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Урок успешно создан
-          schema:
-            properties:
-              id:
-                type: string
-            type: object
-        "400":
-          description: Неверный формат данных
-          schema:
-            $ref: '#/definitions/models.ApiError'
-        "500":
-          description: Ошибка при создании урока
-          schema:
-            $ref: '#/definitions/models.ApiError'
-      summary: Создать урок
-      tags:
-      - lessons
-  /lessons/{lessonsId}:
-    delete:
-      description: Удаляет урок по его UUID
-      parameters:
-      - description: UUID урока
-        format: uuid
-        in: path
-        name: lessonsId
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Урок успешно удален
-        "400":
-          description: Неверный формат UUID
-          schema:
-            $ref: '#/definitions/models.ApiError'
-        "404":
-          description: Урок не найден
-          schema:
-            $ref: '#/definitions/models.ApiError'
-      summary: Удалить урок
-      tags:
-      - lessons
-    get:
-      description: Возвращает информацию об уроке по его UUID
-      parameters:
-      - description: UUID урока
-        format: uuid
-        in: path
-        name: lessonsId
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Данные урока
-          schema:
-            $ref: '#/definitions/models.Lessons'
-        "400":
-          description: Неверный формат UUID
-          schema:
-            $ref: '#/definitions/models.ApiError'
-        "404":
-          description: Урок не найден
-          schema:
-            $ref: '#/definitions/models.ApiError'
-      summary: Получить урок по ID
-      tags:
-      - lessons
-    put:
-      consumes:
-      - application/json
-      description: Обновляет данные урока. Дата в формате DD.MM.YYYY. Статус можно
-        не указывать - он определится автоматически по дате.
-      parameters:
-      - description: UUID урока
-        format: uuid
-        in: path
-        name: lessonsId
-        required: true
-        type: string
-      - description: Обновленные данные урока
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/handlers.updateLessonsrequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Урок успешно обновлен
-        "400":
-          description: Неверные входные данные
-          schema:
-            $ref: '#/definitions/models.ApiError'
-        "404":
-          description: Урок не найден
-          schema:
-            $ref: '#/definitions/models.ApiError'
-        "500":
-          description: Ошибка при обновлении
-          schema:
-            $ref: '#/definitions/models.ApiError'
-      summary: Обновить урок
-      tags:
-      - lessons
-  /students:
+  /settings/students:
     get:
       description: Возвращает список студентов с возможностью фильтрации
       parameters:
@@ -944,7 +940,7 @@ paths:
       summary: Создать нового студента
       tags:
       - Students
-  /students/{studentId}:
+  /settings/students/{studentId}:
     delete:
       description: Удаляет запись о студенте из системы
       parameters:
@@ -1036,7 +1032,7 @@ paths:
       summary: Обновить данные студента
       tags:
       - Students
-  /users:
+  /settings/users:
     get:
       description: Возвращает список всех пользователей с возможностью фильтрации
         по роли
@@ -1103,7 +1099,7 @@ paths:
       summary: Создать пользователя
       tags:
       - Users
-  /users/{id}:
+  /settings/users/{id}:
     delete:
       description: Удаляет пользователя из системы
       parameters:
@@ -1195,7 +1191,7 @@ paths:
       summary: Обновить пользователя
       tags:
       - Users
-  /users/curators:
+  /settings/users/curators:
     get:
       description: Возвращает список всех кураторов с дополнительной информацией (студенты
         и курсы)
@@ -1215,7 +1211,7 @@ paths:
       summary: Получить список кураторов
       tags:
       - Users
-  /users/managers:
+  /settings/users/managers:
     get:
       description: Возвращает список всех пользователей с ролью 'manager'
       produces:

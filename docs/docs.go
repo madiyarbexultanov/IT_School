@@ -15,6 +15,168 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/attendances": {
+            "post": {
+                "description": "Добавляет новую запись: урок, заморозку или пролонгацию",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "attendance"
+                ],
+                "summary": "Создать запись посещаемости",
+                "parameters": [
+                    {
+                        "description": "Данные посещаемости",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.CreateAttendanceRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.ApiError"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/models.ApiError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.ApiError"
+                        }
+                    }
+                }
+            }
+        },
+        "/attendances/{id}": {
+            "put": {
+                "description": "Обновляет запись посещаемости (урок, заморозка или пролонгация)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "attendance"
+                ],
+                "summary": "Обновить запись посещаемости",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID записи посещаемости",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Обновленные данные посещаемости",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.CreateAttendanceRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.ApiError"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/models.ApiError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/models.ApiError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.ApiError"
+                        }
+                    }
+                }
+            }
+        },
+        "/attendances/{student_id}": {
+            "get": {
+                "description": "Возвращает список всех посещений, заморозок и пролонгаций по студенту",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "attendance"
+                ],
+                "summary": "Получить посещаемость студента",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "UUID студента",
+                        "name": "student_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {}
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.ApiError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.ApiError"
+                        }
+                    }
+                }
+            }
+        },
         "/auth/login": {
             "post": {
                 "description": "Вход в систему с email и паролем",
@@ -234,7 +396,54 @@ const docTemplate = `{
                 }
             }
         },
-        "/courses": {
+        "/settings/attendance/{id}": {
+            "delete": {
+                "description": "Удаляет запись посещаемости по ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "attendance"
+                ],
+                "summary": "Удалить запись посещаемости",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID записи посещаемости",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.ApiError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/models.ApiError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.ApiError"
+                        }
+                    }
+                }
+            }
+        },
+        "/settings/courses": {
             "get": {
                 "description": "Возвращает список всех курсов",
                 "produces": [
@@ -310,7 +519,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/courses/{courseId}": {
+        "/settings/courses/{courseId}": {
             "get": {
                 "description": "Возвращает курс по его идентификатору",
                 "produces": [
@@ -423,7 +632,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/curators/add-course": {
+        "/settings/curators/add-course": {
             "post": {
                 "security": [
                     {
@@ -491,7 +700,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/curators/add-student": {
+        "/settings/curators/add-student": {
             "post": {
                 "security": [
                     {
@@ -559,7 +768,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/curators/remove-course": {
+        "/settings/curators/remove-course": {
             "post": {
                 "security": [
                     {
@@ -627,7 +836,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/curators/remove-student": {
+        "/settings/curators/remove-student": {
             "post": {
                 "security": [
                     {
@@ -695,241 +904,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/lessons": {
-            "get": {
-                "description": "Возвращает список уроков с возможностью фильтрации по статусам",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "lessons"
-                ],
-                "summary": "Получить список уроков",
-                "parameters": [
-                    {
-                        "enum": [
-                            "оплачен",
-                            "не оплачен"
-                        ],
-                        "type": "string",
-                        "description": "Фильтр по статусу оплаты",
-                        "name": "payment_status",
-                        "in": "query"
-                    },
-                    {
-                        "enum": [
-                            "запланирован",
-                            "проведен"
-                        ],
-                        "type": "string",
-                        "description": "Фильтр по статусу урока",
-                        "name": "lessons_status",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Список уроков",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/models.Lessons"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка сервера",
-                        "schema": {
-                            "$ref": "#/definitions/models.ApiError"
-                        }
-                    }
-                }
-            },
-            "post": {
-                "description": "Создает новый урок для студента по курсу. Дата в формате DD.MM.YYYY. Если дата не указана, используется текущая дата.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "lessons"
-                ],
-                "summary": "Создать урок",
-                "parameters": [
-                    {
-                        "description": "Данные для создания урока",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/handlers.createLessonsrequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Урок успешно создан",
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "id": {
-                                    "type": "string"
-                                }
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Неверный формат данных",
-                        "schema": {
-                            "$ref": "#/definitions/models.ApiError"
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка при создании урока",
-                        "schema": {
-                            "$ref": "#/definitions/models.ApiError"
-                        }
-                    }
-                }
-            }
-        },
-        "/lessons/{lessonsId}": {
-            "get": {
-                "description": "Возвращает информацию об уроке по его UUID",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "lessons"
-                ],
-                "summary": "Получить урок по ID",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "format": "uuid",
-                        "description": "UUID урока",
-                        "name": "lessonsId",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Данные урока",
-                        "schema": {
-                            "$ref": "#/definitions/models.Lessons"
-                        }
-                    },
-                    "400": {
-                        "description": "Неверный формат UUID",
-                        "schema": {
-                            "$ref": "#/definitions/models.ApiError"
-                        }
-                    },
-                    "404": {
-                        "description": "Урок не найден",
-                        "schema": {
-                            "$ref": "#/definitions/models.ApiError"
-                        }
-                    }
-                }
-            },
-            "put": {
-                "description": "Обновляет данные урока. Дата в формате DD.MM.YYYY. Статус можно не указывать - он определится автоматически по дате.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "lessons"
-                ],
-                "summary": "Обновить урок",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "format": "uuid",
-                        "description": "UUID урока",
-                        "name": "lessonsId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Обновленные данные урока",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/handlers.updateLessonsrequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Урок успешно обновлен"
-                    },
-                    "400": {
-                        "description": "Неверные входные данные",
-                        "schema": {
-                            "$ref": "#/definitions/models.ApiError"
-                        }
-                    },
-                    "404": {
-                        "description": "Урок не найден",
-                        "schema": {
-                            "$ref": "#/definitions/models.ApiError"
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка при обновлении",
-                        "schema": {
-                            "$ref": "#/definitions/models.ApiError"
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "description": "Удаляет урок по его UUID",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "lessons"
-                ],
-                "summary": "Удалить урок",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "format": "uuid",
-                        "description": "UUID урока",
-                        "name": "lessonsId",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Урок успешно удален"
-                    },
-                    "400": {
-                        "description": "Неверный формат UUID",
-                        "schema": {
-                            "$ref": "#/definitions/models.ApiError"
-                        }
-                    },
-                    "404": {
-                        "description": "Урок не найден",
-                        "schema": {
-                            "$ref": "#/definitions/models.ApiError"
-                        }
-                    }
-                }
-            }
-        },
-        "/students": {
+        "/settings/students": {
             "get": {
                 "description": "Возвращает список студентов с возможностью фильтрации",
                 "produces": [
@@ -1039,7 +1014,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/students/{studentId}": {
+        "/settings/students/{studentId}": {
             "get": {
                 "description": "Возвращает полную информацию о студенте по его ID",
                 "produces": [
@@ -1176,7 +1151,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/users": {
+        "/settings/users": {
             "get": {
                 "description": "Возвращает список всех пользователей с возможностью фильтрации по роли",
                 "produces": [
@@ -1275,7 +1250,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/users/curators": {
+        "/settings/users/curators": {
             "get": {
                 "description": "Возвращает список всех кураторов с дополнительной информацией (студенты и курсы)",
                 "produces": [
@@ -1304,7 +1279,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/users/managers": {
+        "/settings/users/managers": {
             "get": {
                 "description": "Возвращает список всех пользователей с ролью 'manager'",
                 "produces": [
@@ -1333,7 +1308,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/users/{id}": {
+        "/settings/users/{id}": {
             "get": {
                 "description": "Возвращает информацию о пользователе по его UUID",
                 "produces": [
@@ -1472,6 +1447,71 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "handlers.AttendanceFreezeInput": {
+            "type": "object",
+            "properties": {
+                "comment": {
+                    "type": "string"
+                },
+                "end_date": {
+                    "type": "string"
+                },
+                "start_date": {
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.AttendanceLessonInput": {
+            "type": "object",
+            "required": [
+                "lessons_status"
+            ],
+            "properties": {
+                "curator_id": {
+                    "type": "string"
+                },
+                "date": {
+                    "type": "string"
+                },
+                "feedback": {
+                    "type": "string"
+                },
+                "feedback_date": {
+                    "type": "string"
+                },
+                "format": {
+                    "type": "string"
+                },
+                "lessons_status": {
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.AttendanceProlongationInput": {
+            "type": "object",
+            "required": [
+                "payment_type"
+            ],
+            "properties": {
+                "amount": {
+                    "type": "number"
+                },
+                "comment": {
+                    "type": "string"
+                },
+                "date": {
+                    "type": "string"
+                },
+                "payment_type": {
+                    "type": "string",
+                    "enum": [
+                        "оплата",
+                        "предоплата",
+                        "доплата"
+                    ]
+                }
+            }
+        },
         "handlers.AuthRequest": {
             "type": "object",
             "required": [
@@ -1492,6 +1532,39 @@ const docTemplate = `{
             "properties": {
                 "title": {
                     "type": "string"
+                }
+            }
+        },
+        "handlers.CreateAttendanceRequest": {
+            "type": "object",
+            "required": [
+                "course_id",
+                "student_id",
+                "type"
+            ],
+            "properties": {
+                "course_id": {
+                    "type": "string"
+                },
+                "freeze": {
+                    "$ref": "#/definitions/handlers.AttendanceFreezeInput"
+                },
+                "lesson": {
+                    "$ref": "#/definitions/handlers.AttendanceLessonInput"
+                },
+                "prolongation": {
+                    "$ref": "#/definitions/handlers.AttendanceProlongationInput"
+                },
+                "student_id": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "урок",
+                        "заморозка",
+                        "пролонгация"
+                    ]
                 }
             }
         },
@@ -1584,27 +1657,6 @@ const docTemplate = `{
                 }
             }
         },
-        "handlers.createLessonsrequest": {
-            "type": "object",
-            "properties": {
-                "course_id": {
-                    "type": "string"
-                },
-                "date": {
-                    "description": "Опционально - если не указана, берем текущую дату",
-                    "type": "string"
-                },
-                "feedback": {
-                    "type": "string"
-                },
-                "feedback_date": {
-                    "type": "string"
-                },
-                "student_id": {
-                    "type": "string"
-                }
-            }
-        },
         "handlers.createStudentRequest": {
             "type": "object",
             "properties": {
@@ -1642,29 +1694,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "platform_link": {
-                    "type": "string"
-                }
-            }
-        },
-        "handlers.updateLessonsrequest": {
-            "type": "object",
-            "properties": {
-                "course_id": {
-                    "type": "string"
-                },
-                "date": {
-                    "type": "string"
-                },
-                "feedback": {
-                    "type": "string"
-                },
-                "lessons_status": {
-                    "type": "string"
-                },
-                "payment_status": {
-                    "type": "string"
-                },
-                "student_id": {
                     "type": "string"
                 }
             }
@@ -1735,38 +1764,6 @@ const docTemplate = `{
                 "error": {
                     "type": "string",
                     "example": "error description"
-                }
-            }
-        },
-        "models.Lessons": {
-            "type": "object",
-            "properties": {
-                "course_id": {
-                    "type": "string"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "date": {
-                    "type": "string"
-                },
-                "feedback": {
-                    "type": "string"
-                },
-                "feedback_date": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "lessons_status": {
-                    "type": "string"
-                },
-                "payment_status": {
-                    "type": "string"
-                },
-                "student_id": {
-                    "type": "string"
                 }
             }
         },
