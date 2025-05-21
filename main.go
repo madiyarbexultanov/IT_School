@@ -187,24 +187,31 @@ func main() {
 }
 
 func loadConfig() error {
-	// Указываем путь к .env файлу
-	viper.SetConfigFile(".env")
+    viper.SetConfigFile(".env")
+    _ = viper.ReadInConfig()   
+    viper.AutomaticEnv()      
 
-	// Загружаем переменные из .env, если он есть (необязательно)
-	_ = viper.ReadInConfig() // не падаем, если файла нет
 
-	// Читаем переменные окружения (например, из Railway)
-	viper.AutomaticEnv()
+    var cfg config.MapConfig
+    if err := viper.Unmarshal(&cfg); err != nil {
+        return err
+    }
 
-	// Мапим переменные в структуру
-	var mapConfig config.MapConfig
-	err := viper.Unmarshal(&mapConfig)
-	if err != nil {
-		return err
-	}
+    cfg.DbConnectionString = viper.GetString("DATABASE_URL")
 
-	config.Config = &mapConfig
-	return nil
+    cfg.JwtSecretKey        = viper.GetString("JWT_SECRET_KEY")
+    cfg.JwtExpiresIn     = viper.GetDuration("JWT_EXPIRE_DURATION")
+    cfg.Initial_Password   = viper.GetString("INITIAL_PASSWORD")
+    cfg.Admin_Name     = viper.GetString("ADMIN_NAME")
+    cfg.Admin_Mail     = viper.GetString("ADMIN_MAIL")
+    cfg.Admin_Phone     = viper.GetString("ADMIN_PHONE")
+    cfg.SMTPPassword          = viper.GetString("SMTP_PASSWORD")
+    cfg.SMTPEmail       = viper.GetString("SMTP_EMAIL")
+    cfg.SMTPHost             = viper.GetString("SMTP_HOST")
+    cfg.SMTPPort             = viper.GetString("SMTP_PORT")
+  
+    config.Config = &cfg
+    return nil
 }
 
 
