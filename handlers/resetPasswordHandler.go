@@ -33,7 +33,7 @@ func NewResetPasswordHandler(authRepo *repositories.AuthRepository, usersRepo *r
 // ResetPassword godoc
 // @Summary Запрос сброса пароля
 // @Description Инициирует процесс сброса пароля по email. Отправляет токен сброса на указанный email (если он существует в системе).
-// @Tags auth
+// @Tags Auth
 // @Accept json
 // @Produce json
 // @Param request body ResetPasswordRequest true "Email для сброса пароля" example={"email": "user@example.com"}
@@ -106,7 +106,7 @@ func (h *ResetPasswordHandler) ResetPassword(c *gin.Context) {
 // SetNewPassword godoc
 // @Summary Установка нового пароля
 // @Description Устанавливает новый пароль после сброса. Требует валидный токен сброса.
-// @Tags auth
+// @Tags Auth
 // @Accept json
 // @Produce json
 // @Param request body SetNewPassword true "Данные для сброса пароля" example={"reset_token": "valid-reset-token-123", "new_password": "newSecurePassword123"}
