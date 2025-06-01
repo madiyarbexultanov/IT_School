@@ -132,7 +132,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/attendances/{student_id}": {
+        "/attendances/{studentId}": {
             "get": {
                 "description": "Возвращает список всех посещений, заморозок и пролонгаций по студенту",
                 "consumes": [
@@ -149,7 +149,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "UUID студента",
-                        "name": "student_id",
+                        "name": "studentId",
                         "in": "path",
                         "required": true
                     }
@@ -1663,12 +1663,6 @@ const docTemplate = `{
                 "course_id": {
                     "type": "string"
                 },
-                "courses": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
                 "created_at": {
                     "type": "string"
                 },
@@ -1703,12 +1697,6 @@ const docTemplate = `{
             "properties": {
                 "course_id": {
                     "type": "string"
-                },
-                "courses": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
                 },
                 "created_at": {
                     "type": "string"
@@ -1798,12 +1786,6 @@ const docTemplate = `{
             "properties": {
                 "course_id": {
                     "type": "string"
-                },
-                "courses": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
                 },
                 "created_at": {
                     "type": "string"

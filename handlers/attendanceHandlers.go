@@ -196,11 +196,11 @@ func (h *AttendanceHandlers) CreateAttendance(c *gin.Context) {
 // @Tags attendance
 // @Accept json
 // @Produce json
-// @Param student_id path string true "UUID студента"
+// @Param studentId path string true "UUID студента"
 // @Success 200 {array} interface{}
 // @Failure 400 {object} models.ApiError
 // @Failure 500 {object} models.ApiError
-// @Router /attendances/{student_id} [get]
+// @Router /attendances/{studentId} [get]
 func (h *AttendanceHandlers) GetByStudent(c *gin.Context) {
 	logger := logger.GetLogger()
 
