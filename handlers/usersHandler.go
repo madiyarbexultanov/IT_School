@@ -162,7 +162,7 @@ func (h *UserHandler) FindCurators(c *gin.Context) {
 func (h *UserHandler) FindById(c *gin.Context) {
 	logger := logger.GetLogger()
 
-	idStr := c.Param("id")
+	idStr := c.Param("userId")
 	id, err := uuid.Parse(idStr)
 
 	if err != nil {
@@ -275,7 +275,7 @@ func (h *UserHandler) Create(c *gin.Context) {
 func (h *UserHandler) Update(c *gin.Context) {
 	logger := logger.GetLogger()
 
-	idStr := c.Param("id")
+	idStr := c.Param("userId")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
 		logger.Error("Invalid user id", zap.String("id", idStr))
