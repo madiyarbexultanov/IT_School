@@ -27,7 +27,7 @@ func NewCourseHandlers(courseRepo *repositories.CourseRepository) *CourseHandler
 // Create godoc
 // @Summary Создать курс
 // @Description Создает новый курс
-// @Tags courses
+// @Tags Courses
 // @Accept json
 // @Produce json
 // @Param request body CourseRequest true "Данные курса"
@@ -60,7 +60,7 @@ func (h *CourseHandlers) Create(c *gin.Context) {
 // Update godoc
 // @Summary Обновить курс
 // @Description Обновляет курс по ID
-// @Tags courses
+// @Tags Courses
 // @Accept json
 // @Produce json
 // @Param courseId path string true "ID курса"
@@ -107,7 +107,7 @@ func (h *CourseHandlers) Update(c *gin.Context) {
 // FindById godoc
 // @Summary Получить курс по ID
 // @Description Возвращает курс по его идентификатору
-// @Tags courses
+// @Tags Courses
 // @Produce json
 // @Param courseId path string true "ID курса"
 // @Success 200 {object} models.Course
@@ -132,7 +132,7 @@ func (h *CourseHandlers) FindById(c *gin.Context) {
 // FindAll godoc
 // @Summary Получить все курсы
 // @Description Возвращает список всех курсов
-// @Tags courses
+// @Tags Courses
 // @Produce json
 // @Success 200 {array} models.Course
 // @Failure 400 {object} models.ApiError
@@ -149,7 +149,7 @@ func (h *CourseHandlers) FindAll(c *gin.Context) {
 // Delete godoc
 // @Summary Удалить курс
 // @Description Удаляет курс по ID
-// @Tags courses
+// @Tags Courses
 // @Produce json
 // @Param courseId path string true "ID курса"
 // @Success 200

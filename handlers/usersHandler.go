@@ -154,11 +154,11 @@ func (h *UserHandler) FindCurators(c *gin.Context) {
 // @Description Возвращает информацию о пользователе по его UUID
 // @Tags Users
 // @Produce json
-// @Param id path string true "ID пользователя" format(uuid)
+// @Param userId path string true "ID пользователя" format(uuid)
 // @Success 200 {object} models.User "Данные пользователя"
 // @Failure 400 {object} models.ApiError "Неверный формат UUID"
 // @Failure 404 {object} models.ApiError "Пользователь не найден"
-// @Router /settings/users/{id} [get]
+// @Router /settings/users/{userId} [get]
 func (h *UserHandler) FindById(c *gin.Context) {
 	logger := logger.GetLogger()
 
@@ -265,13 +265,13 @@ func (h *UserHandler) Create(c *gin.Context) {
 // @Tags Users
 // @Accept json
 // @Produce json
-// @Param id path string true "ID пользователя" format(uuid)
+// @Param userId path string true "ID пользователя" format(uuid)
 // @Param request body models.User true "Обновленные данные пользователя"
 // @Success 200 "Данные обновлены"
 // @Failure 400 {object} models.ApiError "Неверные данные"
 // @Failure 404 {object} models.ApiError "Пользователь не найден"
 // @Failure 500 {object} models.ApiError "Ошибка сервера"
-// @Router /settings/users/{id} [put]
+// @Router /settings/users/{userId} [put]
 func (h *UserHandler) Update(c *gin.Context) {
 	logger := logger.GetLogger()
 

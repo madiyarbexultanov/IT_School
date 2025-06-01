@@ -24,7 +24,7 @@ type createStudentRequest struct {
 	PlatformLink string   `json:"platform_link"`
 	CrmLink      string   `json:"crm_link"`
 	CreatedAt    *string  `json:"created_at"`
-    IsActive     *string  `json:"is_active"`
+    IsActive     *string  `json:"is_active" enums:"активен,неактивен" example:"активен"`
 }
 
 type updateStudentRequest struct {
@@ -37,7 +37,7 @@ type updateStudentRequest struct {
 	PlatformLink string   `json:"platform_link"`
 	CrmLink      string   `json:"crm_link"`
 	CreatedAt    *string  `json:"created_at"`
-	IsActive     *string  `json:"is_active"`
+	IsActive     *string  `json:"is_active" enums:"активен,неактивен" example:"активен"`
 }
 type StudentsHandlers struct {
 	StudentsRepo *repositories.StudentsRepository
@@ -76,11 +76,14 @@ func formatPhoneNumber(input string, defaultRegion string) (string, error) {
 
 // Create godoc
 // @Summary Создать нового студента
-// @Description Создает запись о студенте с указанием курсов, контактных данных и ссылок
+// @Description Создает запись о студенте. Допустимые значения:
+// @Description - is_active: активен, неактивен
+// @Description - created_at: дата в формате DD.MM.YYYY
+// @Description - phone_number: международный формат (+7XXX...)
 // @Tags Students
 // @Accept json
 // @Produce json
-// @Param request body createStudentRequest true "Данные студента" example={"course_id": "550e8400-e29b-41d4-a716-446655440000", "full_name": "Иванов Иван", "phone_number": "+77071234567", "parent_name": "Иванова Мария", "parent_phone_number": "+77076543210", "curator_id": "550e8400-e29b-41d4-a716-446655440000", "platform_link": "https://platform.example.com", "crm_link": "https://crm.example.com", "created_at": "01.01.2023", "is_active": "активен"}
+// @Param request body createStudentRequest true "Данные студента"
 // @Success 201 {object} object{id=string} "ID созданного студента"
 // @Failure 400 {object} models.ApiError "Неверный формат данных"
 // @Failure 500 {object} models.ApiError "Ошибка сервера"
@@ -197,12 +200,16 @@ func (h *StudentsHandlers) FindById(c *gin.Context) {
 
 // Update godoc
 // @Summary Обновить данные студента
-// @Description Обновляет информацию о существующем студенте
+// @Description Обновляет информацию о существующем студенте. Допустимые значения:
+// @Description - is_active: активен, неактивен
+// @Description - created_at: дата в формате DD.MM.YYYY
+// @Description - phone_number: международный формат (+7XXX...)
 // @Tags Students
 // @Accept json
 // @Produce json
 // @Param studentId path string true "UUID студента" format(uuid)
-// @Param request body updateStudentRequest true "Обновленные данные" example={"course_id": "550e8400-e29b-41d4-a716-446655440000", "full_name": "Иванов Иван", "phone_number": "+77071234567", "parent_name": "Иванова Мария", "parent_phone_number": "+77076543210", "curator_id": "550e8400-e29b-41d4-a716-446655440000", "platform_link": "https://platform.example.com", "crm_link": "https://crm.example.com", "created_at": "01.01.2023", "is_active": "активен"}
+// @Param is_active body string true "Статус студента" Enums(активен, неактивен)
+// @Param request body updateStudentRequest true "Обновленные данные"
 // @Success 200 "Данные успешно обновлены"
 // @Failure 400 {object} models.ApiError "Неверный формат данных"
 // @Failure 404 {object} models.ApiError "Студент не найден"
@@ -298,7 +305,7 @@ func (h *StudentsHandlers) Update(c *gin.Context) {
 // @Produce json
 // @Param search query string false "Поиск по ФИО"
 // @Param course query string false "Фильтр по ID курса" format(uuid)
-// @Param is_active query string false "Фильтр по активности" Enums(активен, неактивен)
+// @Param is_active body string false "Фильтр по активности" Enums(активен, неактивен)
 // @Param curator_id query string false "Фильтр по ID куратора" format(uuid)
 // @Success 200 {array} models.Student "Список студентов"
 // @Failure 500 {object} models.ApiError "Ошибка сервера"

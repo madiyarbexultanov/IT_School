@@ -38,7 +38,7 @@ func NewAuthHandler(usersRepo *repositories.UsersRepository, sessionsRepo *repos
 // Login godoc
 // @Summary Аутентификация пользователя
 // @Description Вход в систему с email и паролем
-// @Tags auth
+// @Tags Auth
 // @Accept json
 // @Produce json
 // @Param credentials body AuthRequest true "Данные для входа"
@@ -125,7 +125,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 // Logout godoc
 // @Summary Выход из системы
 // @Description Завершает текущую сессию пользователя
-// @Tags auth
+// @Tags Auth
 // @Produce json
 // @Success 200 {object} models.MessageResponse
 // @Failure 400 {object} models.ApiError
@@ -162,7 +162,7 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 // Refresh godoc
 // @Summary Обновление токена
 // @Description Обновляет JWT токен с помощью refresh токена из cookie
-// @Tags auth
+// @Tags Auth
 // @Produce json
 // @Success 200 {object} models.TokenResponse  // Убрано слово "object"
 // @Failure 401 {object} models.ErrorResponse // Используем ErrorResponse вместо ApiError

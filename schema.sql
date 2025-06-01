@@ -3,7 +3,6 @@ CREATE TYPE public."attendance_type" AS ENUM ('урок', 'заморозка', 
 CREATE TYPE public."is_active" AS ENUM ('активен', 'неактивен');
 CREATE TYPE public."lessons_status" AS ENUM ('пропущен', 'проведен', 'запланирован', 'отменен');
 CREATE TYPE public."payment_type" AS ENUM ('оплата', 'предоплата', 'доплата');
-CREATE TYPE payment_status AS ENUM ('оплачен', 'не оплачен', 'предоплата');
 
 -- Создание таблиц
 CREATE TABLE courses (

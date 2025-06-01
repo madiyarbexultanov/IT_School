@@ -17,7 +17,7 @@ const docTemplate = `{
     "paths": {
         "/attendances": {
             "post": {
-                "description": "Добавляет новую запись: урок, заморозку или пролонгацию",
+                "description": "Добавляет новую запись: урок, заморозку или пролонгацию\nДопустимые значения:\n- type: урок, заморозка, пролонгация\n- lessons_status: пропущен, проведен, запланирован, отменен\n- payment_type: оплата, предоплата, доплата",
                 "consumes": [
                     "application/json"
                 ],
@@ -25,7 +25,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "attendance"
+                    "Attendance"
                 ],
                 "summary": "Создать запись посещаемости",
                 "parameters": [
@@ -48,31 +48,13 @@ const docTemplate = `{
                                 "type": "string"
                             }
                         }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/models.ApiError"
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden",
-                        "schema": {
-                            "$ref": "#/definitions/models.ApiError"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/models.ApiError"
-                        }
                     }
                 }
             }
         },
         "/attendances/{id}": {
             "put": {
-                "description": "Обновляет запись посещаемости (урок, заморозка или пролонгация)",
+                "description": "Обновляет запись посещаемости (урок, заморозка или пролонгация)\nДопустимые значения:\n- type: урок, заморозка, пролонгация\n- lessons_status: пропущен, проведен, запланирован, отменен\n- payment_type: оплата, предоплата, доплата",
                 "consumes": [
                     "application/json"
                 ],
@@ -80,7 +62,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "attendance"
+                    "Attendance"
                 ],
                 "summary": "Обновить запись посещаемости",
                 "parameters": [
@@ -142,7 +124,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "attendance"
+                    "Attendance"
                 ],
                 "summary": "Получить посещаемость студента",
                 "parameters": [
@@ -187,7 +169,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "auth"
+                    "Auth"
                 ],
                 "summary": "Аутентификация пользователя",
                 "parameters": [
@@ -241,7 +223,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "auth"
+                    "Auth"
                 ],
                 "summary": "Выход из системы",
                 "responses": {
@@ -276,7 +258,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "auth"
+                    "Auth"
                 ],
                 "summary": "Установка нового пароля",
                 "parameters": [
@@ -325,7 +307,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "auth"
+                    "Auth"
                 ],
                 "summary": "Обновление токена",
                 "responses": {
@@ -360,7 +342,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "auth"
+                    "Auth"
                 ],
                 "summary": "Запрос сброса пароля",
                 "parameters": [
@@ -406,7 +388,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "attendance"
+                    "Attendance"
                 ],
                 "summary": "Удалить запись посещаемости",
                 "parameters": [
@@ -450,7 +432,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "courses"
+                    "Courses"
                 ],
                 "summary": "Получить все курсы",
                 "responses": {
@@ -480,7 +462,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "courses"
+                    "Courses"
                 ],
                 "summary": "Создать курс",
                 "parameters": [
@@ -526,7 +508,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "courses"
+                    "Courses"
                 ],
                 "summary": "Получить курс по ID",
                 "parameters": [
@@ -562,7 +544,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "courses"
+                    "Courses"
                 ],
                 "summary": "Обновить курс",
                 "parameters": [
@@ -607,7 +589,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "courses"
+                    "Courses"
                 ],
                 "summary": "Удалить курс",
                 "parameters": [
@@ -647,7 +629,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "curators"
+                    "Curators"
                 ],
                 "summary": "Add course to curator",
                 "parameters": [
@@ -715,7 +697,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "curators"
+                    "Curators"
                 ],
                 "summary": "Add student to curator",
                 "parameters": [
@@ -783,7 +765,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "curators"
+                    "Curators"
                 ],
                 "summary": "Remove course from curator",
                 "parameters": [
@@ -851,7 +833,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "curators"
+                    "Curators"
                 ],
                 "summary": "Remove student from curator",
                 "parameters": [
@@ -929,14 +911,16 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
-                        "enum": [
-                            "активен",
-                            "неактивен"
-                        ],
-                        "type": "string",
                         "description": "Фильтр по активности",
                         "name": "is_active",
-                        "in": "query"
+                        "in": "body",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "активен",
+                                "неактивен"
+                            ]
+                        }
                     },
                     {
                         "type": "string",
@@ -965,7 +949,7 @@ const docTemplate = `{
                 }
             },
             "post": {
-                "description": "Создает запись о студенте с указанием курсов, контактных данных и ссылок",
+                "description": "Создает запись о студенте. Допустимые значения:\n- is_active: активен, неактивен\n- created_at: дата в формате DD.MM.YYYY\n- phone_number: международный формат (+7XXX...)",
                 "consumes": [
                     "application/json"
                 ],
@@ -1056,7 +1040,7 @@ const docTemplate = `{
                 }
             },
             "put": {
-                "description": "Обновляет информацию о существующем студенте",
+                "description": "Обновляет информацию о существующем студенте. Допустимые значения:\n- is_active: активен, неактивен\n- created_at: дата в формате DD.MM.YYYY\n- phone_number: международный формат (+7XXX...)",
                 "consumes": [
                     "application/json"
                 ],
@@ -1075,6 +1059,19 @@ const docTemplate = `{
                         "name": "studentId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "description": "Статус студента",
+                        "name": "is_active",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "активен",
+                                "неактивен"
+                            ]
+                        }
                     },
                     {
                         "description": "Обновленные данные",
@@ -1309,6 +1306,48 @@ const docTemplate = `{
             }
         },
         "/settings/users/{id}": {
+            "delete": {
+                "description": "Удаляет пользователя из системы",
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Удалить пользователя",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "ID пользователя",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Пользователь удален"
+                    },
+                    "400": {
+                        "description": "Неверный формат UUID",
+                        "schema": {
+                            "$ref": "#/definitions/models.ApiError"
+                        }
+                    },
+                    "404": {
+                        "description": "Пользователь не найден",
+                        "schema": {
+                            "$ref": "#/definitions/models.ApiError"
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка сервера",
+                        "schema": {
+                            "$ref": "#/definitions/models.ApiError"
+                        }
+                    }
+                }
+            }
+        },
+        "/settings/users/{userId}": {
             "get": {
                 "description": "Возвращает информацию о пользователе по его UUID",
                 "produces": [
@@ -1323,7 +1362,7 @@ const docTemplate = `{
                         "type": "string",
                         "format": "uuid",
                         "description": "ID пользователя",
-                        "name": "id",
+                        "name": "userId",
                         "in": "path",
                         "required": true
                     }
@@ -1366,7 +1405,7 @@ const docTemplate = `{
                         "type": "string",
                         "format": "uuid",
                         "description": "ID пользователя",
-                        "name": "id",
+                        "name": "userId",
                         "in": "path",
                         "required": true
                     },
@@ -1386,46 +1425,6 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Неверные данные",
-                        "schema": {
-                            "$ref": "#/definitions/models.ApiError"
-                        }
-                    },
-                    "404": {
-                        "description": "Пользователь не найден",
-                        "schema": {
-                            "$ref": "#/definitions/models.ApiError"
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка сервера",
-                        "schema": {
-                            "$ref": "#/definitions/models.ApiError"
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "description": "Удаляет пользователя из системы",
-                "tags": [
-                    "Users"
-                ],
-                "summary": "Удалить пользователя",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "format": "uuid",
-                        "description": "ID пользователя",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "Пользователь удален"
-                    },
-                    "400": {
-                        "description": "Неверный формат UUID",
                         "schema": {
                             "$ref": "#/definitions/models.ApiError"
                         }
@@ -1676,7 +1675,12 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "is_active": {
-                    "type": "string"
+                    "type": "string",
+                    "enum": [
+                        "активен",
+                        "неактивен"
+                    ],
+                    "example": "активен"
                 },
                 "parent_name": {
                     "type": "string"
@@ -1711,7 +1715,12 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "is_active": {
-                    "type": "string"
+                    "type": "string",
+                    "enum": [
+                        "активен",
+                        "неактивен"
+                    ],
+                    "example": "активен"
                 },
                 "parent_name": {
                     "type": "string"

@@ -22,7 +22,7 @@ func NewCuratorsHandler(repo *repositories.CuratorsRepository) *CuratorsHandler 
 // AddStudent godoc
 // @Summary Add student to curator
 // @Description Assigns a student to a curator
-// @Tags curators
+// @Tags Curators
 // @Accept json
 // @Produce json
 // @Security ApiKeyAuth
@@ -57,7 +57,7 @@ func (h *CuratorsHandler) AddStudent(c *gin.Context) {
 // RemoveStudent godoc
 // @Summary Remove student from curator
 // @Description Unassigns a student from a curator
-// @Tags curators
+// @Tags Curators
 // @Accept json
 // @Produce json
 // @Security ApiKeyAuth
@@ -92,7 +92,7 @@ func (h *CuratorsHandler) RemoveStudent(c *gin.Context) {
 // AddCourse godoc
 // @Summary Add course to curator
 // @Description Assigns a course to a curator
-// @Tags curators
+// @Tags Curators
 // @Accept json
 // @Produce json
 // @Security ApiKeyAuth
@@ -127,7 +127,7 @@ func (h *CuratorsHandler) AddCourse(c *gin.Context) {
 // RemoveCourse godoc
 // @Summary Remove course from curator
 // @Description Unassigns a course from a curator
-// @Tags curators
+// @Tags Curators
 // @Accept json
 // @Produce json
 // @Security ApiKeyAuth

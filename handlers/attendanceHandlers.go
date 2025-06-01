@@ -36,7 +36,7 @@ import (
 		Format        *string    `json:"format"`
 		Feedback      *string    `json:"feedback"`
 		FeedbackDate  *string    `json:"feedback_date"`
-		LessonStatus  string     `json:"lessons_status" binding:"required, oneof=проведен отменен перенос"`
+		LessonStatus  string     `json:"lessons_status" binding:"required, oneof=пропущен проведен запланирован отменен"`
 	}
 
 	type AttendanceFreezeInput struct {
@@ -53,17 +53,19 @@ import (
 	}
 
 
+
 // CreateAttendance godoc
 // @Summary Создать запись посещаемости
 // @Description Добавляет новую запись: урок, заморозку или пролонгацию
-// @Tags attendance
+// @Description Допустимые значения:
+// @Description - type: урок, заморозка, пролонгация
+// @Description - lessons_status: пропущен, проведен, запланирован, отменен
+// @Description - payment_type: оплата, предоплата, доплата
+// @Tags Attendance
 // @Accept json
 // @Produce json
 // @Param request body CreateAttendanceRequest true "Данные посещаемости"
 // @Success 201 {object} map[string]string
-// @Failure 400 {object} models.ApiError
-// @Failure 403 {object} models.ApiError
-// @Failure 500 {object} models.ApiError
 // @Router /attendances [post]
 func (h *AttendanceHandlers) CreateAttendance(c *gin.Context) {
 	logger := logger.GetLogger()
@@ -193,7 +195,7 @@ func (h *AttendanceHandlers) CreateAttendance(c *gin.Context) {
 // GetByStudent godoc
 // @Summary Получить посещаемость студента
 // @Description Возвращает список всех посещений, заморозок и пролонгаций по студенту
-// @Tags attendance
+// @Tags Attendance
 // @Accept json
 // @Produce json
 // @Param studentId path string true "UUID студента"
@@ -224,7 +226,11 @@ func (h *AttendanceHandlers) GetByStudent(c *gin.Context) {
 // UpdateAttendance godoc
 // @Summary Обновить запись посещаемости
 // @Description Обновляет запись посещаемости (урок, заморозка или пролонгация)
-// @Tags attendance
+// @Description Допустимые значения:
+// @Description - type: урок, заморозка, пролонгация
+// @Description - lessons_status: пропущен, проведен, запланирован, отменен
+// @Description - payment_type: оплата, предоплата, доплата
+// @Tags Attendance
 // @Accept json
 // @Produce json
 // @Param id path string true "ID записи посещаемости"
@@ -385,7 +391,7 @@ func (h *AttendanceHandlers) UpdateAttendance(c *gin.Context) {
 // Delete godoc
 // @Summary Удалить запись посещаемости
 // @Description Удаляет запись посещаемости по ID
-// @Tags attendance
+// @Tags Attendance
 // @Accept json
 // @Produce json
 // @Param id path string true "ID записи посещаемости"

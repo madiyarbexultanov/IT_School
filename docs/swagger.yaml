@@ -151,6 +151,10 @@ definitions:
       full_name:
         type: string
       is_active:
+        enum:
+        - активен
+        - неактивен
+        example: активен
         type: string
       parent_name:
         type: string
@@ -174,6 +178,10 @@ definitions:
       full_name:
         type: string
       is_active:
+        enum:
+        - активен
+        - неактивен
+        example: активен
         type: string
       parent_name:
         type: string
@@ -278,7 +286,12 @@ paths:
     post:
       consumes:
       - application/json
-      description: 'Добавляет новую запись: урок, заморозку или пролонгацию'
+      description: |-
+        Добавляет новую запись: урок, заморозку или пролонгацию
+        Допустимые значения:
+        - type: урок, заморозка, пролонгация
+        - lessons_status: пропущен, проведен, запланирован, отменен
+        - payment_type: оплата, предоплата, доплата
       parameters:
       - description: Данные посещаемости
         in: body
@@ -295,26 +308,19 @@ paths:
             additionalProperties:
               type: string
             type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/models.ApiError'
-        "403":
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/models.ApiError'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/models.ApiError'
       summary: Создать запись посещаемости
       tags:
-      - attendance
+      - Attendance
   /attendances/{id}:
     put:
       consumes:
       - application/json
-      description: Обновляет запись посещаемости (урок, заморозка или пролонгация)
+      description: |-
+        Обновляет запись посещаемости (урок, заморозка или пролонгация)
+        Допустимые значения:
+        - type: урок, заморозка, пролонгация
+        - lessons_status: пропущен, проведен, запланирован, отменен
+        - payment_type: оплата, предоплата, доплата
       parameters:
       - description: ID записи посещаемости
         in: path
@@ -350,7 +356,7 @@ paths:
             $ref: '#/definitions/models.ApiError'
       summary: Обновить запись посещаемости
       tags:
-      - attendance
+      - Attendance
   /attendances/{studentId}:
     get:
       consumes:
@@ -380,7 +386,7 @@ paths:
             $ref: '#/definitions/models.ApiError'
       summary: Получить посещаемость студента
       tags:
-      - attendance
+      - Attendance
   /auth/login:
     post:
       consumes:
@@ -414,7 +420,7 @@ paths:
             $ref: '#/definitions/models.ApiError'
       summary: Аутентификация пользователя
       tags:
-      - auth
+      - Auth
   /auth/logout:
     post:
       description: Завершает текущую сессию пользователя
@@ -437,7 +443,7 @@ paths:
       - ApiKeyAuth: []
       summary: Выход из системы
       tags:
-      - auth
+      - Auth
   /auth/new-password:
     post:
       consumes:
@@ -472,7 +478,7 @@ paths:
             $ref: '#/definitions/models.ApiError'
       summary: Установка нового пароля
       tags:
-      - auth
+      - Auth
   /auth/refresh:
     post:
       description: Обновляет JWT токен с помощью refresh токена из cookie
@@ -493,7 +499,7 @@ paths:
             $ref: '#/definitions/models.ErrorResponse'
       summary: Обновление токена
       tags:
-      - auth
+      - Auth
   /auth/reset-password:
     post:
       consumes:
@@ -525,7 +531,7 @@ paths:
             $ref: '#/definitions/models.ApiError'
       summary: Запрос сброса пароля
       tags:
-      - auth
+      - Auth
   /settings/attendance/{id}:
     delete:
       consumes:
@@ -556,7 +562,7 @@ paths:
             $ref: '#/definitions/models.ApiError'
       summary: Удалить запись посещаемости
       tags:
-      - attendance
+      - Attendance
   /settings/courses:
     get:
       description: Возвращает список всех курсов
@@ -575,7 +581,7 @@ paths:
             $ref: '#/definitions/models.ApiError'
       summary: Получить все курсы
       tags:
-      - courses
+      - Courses
     post:
       consumes:
       - application/json
@@ -606,7 +612,7 @@ paths:
             $ref: '#/definitions/models.ApiError'
       summary: Создать курс
       tags:
-      - courses
+      - Courses
   /settings/courses/{courseId}:
     delete:
       description: Удаляет курс по ID
@@ -627,7 +633,7 @@ paths:
             $ref: '#/definitions/models.ApiError'
       summary: Удалить курс
       tags:
-      - courses
+      - Courses
     get:
       description: Возвращает курс по его идентификатору
       parameters:
@@ -649,7 +655,7 @@ paths:
             $ref: '#/definitions/models.ApiError'
       summary: Получить курс по ID
       tags:
-      - courses
+      - Courses
     put:
       consumes:
       - application/json
@@ -681,7 +687,7 @@ paths:
             $ref: '#/definitions/models.ApiError'
       summary: Обновить курс
       tags:
-      - courses
+      - Courses
   /settings/curators/add-course:
     post:
       consumes:
@@ -724,7 +730,7 @@ paths:
       - ApiKeyAuth: []
       summary: Add course to curator
       tags:
-      - curators
+      - Curators
   /settings/curators/add-student:
     post:
       consumes:
@@ -767,7 +773,7 @@ paths:
       - ApiKeyAuth: []
       summary: Add student to curator
       tags:
-      - curators
+      - Curators
   /settings/curators/remove-course:
     post:
       consumes:
@@ -810,7 +816,7 @@ paths:
       - ApiKeyAuth: []
       summary: Remove course from curator
       tags:
-      - curators
+      - Curators
   /settings/curators/remove-student:
     post:
       consumes:
@@ -853,7 +859,7 @@ paths:
       - ApiKeyAuth: []
       summary: Remove student from curator
       tags:
-      - curators
+      - Curators
   /settings/students:
     get:
       description: Возвращает список студентов с возможностью фильтрации
@@ -868,12 +874,13 @@ paths:
         name: course
         type: string
       - description: Фильтр по активности
-        enum:
-        - активен
-        - неактивен
-        in: query
+        in: body
         name: is_active
-        type: string
+        schema:
+          enum:
+          - активен
+          - неактивен
+          type: string
       - description: Фильтр по ID куратора
         format: uuid
         in: query
@@ -898,8 +905,11 @@ paths:
     post:
       consumes:
       - application/json
-      description: Создает запись о студенте с указанием курсов, контактных данных
-        и ссылок
+      description: |-
+        Создает запись о студенте. Допустимые значения:
+        - is_active: активен, неактивен
+        - created_at: дата в формате DD.MM.YYYY
+        - phone_number: международный формат (+7XXX...)
       parameters:
       - description: Данные студента
         in: body
@@ -986,7 +996,11 @@ paths:
     put:
       consumes:
       - application/json
-      description: Обновляет информацию о существующем студенте
+      description: |-
+        Обновляет информацию о существующем студенте. Допустимые значения:
+        - is_active: активен, неактивен
+        - created_at: дата в формате DD.MM.YYYY
+        - phone_number: международный формат (+7XXX...)
       parameters:
       - description: UUID студента
         format: uuid
@@ -994,6 +1008,15 @@ paths:
         name: studentId
         required: true
         type: string
+      - description: Статус студента
+        in: body
+        name: is_active
+        required: true
+        schema:
+          enum:
+          - активен
+          - неактивен
+          type: string
       - description: Обновленные данные
         in: body
         name: request
@@ -1115,13 +1138,14 @@ paths:
       summary: Удалить пользователя
       tags:
       - Users
+  /settings/users/{userId}:
     get:
       description: Возвращает информацию о пользователе по его UUID
       parameters:
       - description: ID пользователя
         format: uuid
         in: path
-        name: id
+        name: userId
         required: true
         type: string
       produces:
@@ -1150,7 +1174,7 @@ paths:
       - description: ID пользователя
         format: uuid
         in: path
-        name: id
+        name: userId
         required: true
         type: string
       - description: Обновленные данные пользователя
