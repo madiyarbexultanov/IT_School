@@ -144,7 +144,7 @@ func main() {
 	
 	{
 		attendanceGroup.POST("", AttendanceHandlers.CreateAttendance)
-		attendanceGroup.GET("/:id", AttendanceHandlers.GetByStudent)
+		attendanceGroup.GET("/:studentId", AttendanceHandlers.GetByStudent)
 		attendanceGroup.PUT("/:id", AttendanceHandlers.UpdateAttendance)
 	}
 

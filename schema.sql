@@ -3,6 +3,7 @@ CREATE TYPE public."attendance_type" AS ENUM ('урок', 'заморозка', 
 CREATE TYPE public."is_active" AS ENUM ('активен', 'неактивен');
 CREATE TYPE public."lessons_status" AS ENUM ('пропущен', 'проведен', 'запланирован', 'отменен');
 CREATE TYPE public."payment_type" AS ENUM ('оплата', 'предоплата', 'доплата');
+CREATE TYPE payment_status AS ENUM ('оплачен', 'не оплачен', 'предоплата');
 
 -- Создание таблиц
 CREATE TABLE courses (
@@ -89,16 +90,4 @@ CREATE TABLE attendance_prolongations (
     date date NOT NULL,
     amount numeric NOT NULL,
     comment text NULL
-);
-
-CREATE TABLE lessons (
-    id uuid NOT NULL PRIMARY KEY,
-    student_id uuid NULL REFERENCES students(id) ON DELETE CASCADE,
-    date date NOT NULL,
-    feedback text NULL,
-    payment_status public."payment_status" NULL,
-    lessons_status public."lessons_status" NULL,
-    feedback_date timestamp NOT NULL,
-    created_at timestamp DEFAULT now() NULL,
-    course_id uuid NULL REFERENCES courses(id) ON DELETE CASCADE
 );

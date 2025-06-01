@@ -142,10 +142,6 @@ definitions:
     properties:
       course_id:
         type: string
-      courses:
-        items:
-          type: string
-        type: array
       created_at:
         type: string
       crm_link:
@@ -169,10 +165,6 @@ definitions:
     properties:
       course_id:
         type: string
-      courses:
-        items:
-          type: string
-        type: array
       created_at:
         type: string
       crm_link:
@@ -232,10 +224,6 @@ definitions:
     properties:
       course_id:
         type: string
-      courses:
-        items:
-          type: string
-        type: array
       created_at:
         type: string
       crm_link:
@@ -363,7 +351,7 @@ paths:
       summary: Обновить запись посещаемости
       tags:
       - attendance
-  /attendances/{student_id}:
+  /attendances/{studentId}:
     get:
       consumes:
       - application/json
@@ -371,7 +359,7 @@ paths:
       parameters:
       - description: UUID студента
         in: path
-        name: student_id
+        name: studentId
         required: true
         type: string
       produces:
