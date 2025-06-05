@@ -206,7 +206,8 @@ func (h *AttendanceHandlers) CreateAttendance(c *gin.Context) {
 func (h *AttendanceHandlers) GetByStudent(c *gin.Context) {
 	logger := logger.GetLogger()
 
-	studentIDStr := c.Param("student_id")
+	// Кажетется из за парсинга айди студента так как айди приходит итак в UUID формате. А после парсинга данные меняются
+	studentIDStr := c.Param("studentId")
 	studentID, err := uuid.Parse(studentIDStr)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, models.NewApiError("Invalid student UUID"))
@@ -233,18 +234,18 @@ func (h *AttendanceHandlers) GetByStudent(c *gin.Context) {
 // @Tags Attendance
 // @Accept json
 // @Produce json
-// @Param id path string true "ID записи посещаемости"
+// @Param attendanceId path string true "ID записи посещаемости"
 // @Param request body CreateAttendanceRequest true "Обновленные данные посещаемости"
 // @Success 200
 // @Failure 400 {object} models.ApiError
 // @Failure 403 {object} models.ApiError
 // @Failure 404 {object} models.ApiError
 // @Failure 500 {object} models.ApiError
-// @Router /attendances/{id} [put]
+// @Router /attendances/{attendanceId} [put]
 func (h *AttendanceHandlers) UpdateAttendance(c *gin.Context) {
 	logger := logger.GetLogger()
 
-	attendanceIDParam := c.Param("id")
+	attendanceIDParam := c.Param("attendanceId")
 	attendanceID, err := uuid.Parse(attendanceIDParam)
 	if err != nil {
 		logger.Error("Invalid attendance ID", zap.Error(err))
