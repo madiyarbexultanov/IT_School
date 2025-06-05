@@ -52,7 +52,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/attendances/{id}": {
+        "/attendances/{attendanceId}": {
             "put": {
                 "description": "Обновляет запись посещаемости (урок, заморозка или пролонгация)\nДопустимые значения:\n- type: урок, заморозка, пролонгация\n- lessons_status: пропущен, проведен, запланирован, отменен\n- payment_type: оплата, предоплата, доплата",
                 "consumes": [
@@ -69,7 +69,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "ID записи посещаемости",
-                        "name": "id",
+                        "name": "attendanceId",
                         "in": "path",
                         "required": true
                     },
@@ -1853,13 +1853,13 @@ const docTemplate = `{
                 "id": {
                     "type": "string"
                 },
-                "passwordHash": {
+                "password_hash": {
                     "type": "string"
                 },
-                "resetTokenExpiresAt": {
+                "reset_token_expires_at": {
                     "type": "string"
                 },
-                "roleID": {
+                "role_id": {
                     "type": "string"
                 },
                 "telephone": {

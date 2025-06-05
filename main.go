@@ -145,7 +145,7 @@ func main() {
 	{
 		attendanceGroup.POST("", AttendanceHandlers.CreateAttendance)
 		attendanceGroup.GET("/:studentId", AttendanceHandlers.GetByStudent)
-		attendanceGroup.PUT("/:id", AttendanceHandlers.UpdateAttendance)
+		attendanceGroup.PUT("/:attendanceId", AttendanceHandlers.UpdateAttendance)
 	}
 
 	// Фунеции Куратора для работы со студентами и курсами

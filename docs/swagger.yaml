@@ -270,11 +270,11 @@ definitions:
         type: string
       id:
         type: string
-      passwordHash:
+      password_hash:
         type: string
-      resetTokenExpiresAt:
+      reset_token_expires_at:
         type: string
-      roleID:
+      role_id:
         type: string
       telephone:
         type: string
@@ -311,7 +311,7 @@ paths:
       summary: Создать запись посещаемости
       tags:
       - Attendance
-  /attendances/{id}:
+  /attendances/{attendanceId}:
     put:
       consumes:
       - application/json
@@ -324,7 +324,7 @@ paths:
       parameters:
       - description: ID записи посещаемости
         in: path
-        name: id
+        name: attendanceId
         required: true
         type: string
       - description: Обновленные данные посещаемости
