@@ -36,7 +36,7 @@ import (
 		Format        *string    `json:"format"`
 		Feedback      *string    `json:"feedback"`
 		FeedbackDate  *string    `json:"feedback_date"`
-		LessonStatus  string     `json:"lessons_status" binding:"required, oneof=пропущен проведен запланирован отменен"`
+		LessonStatus  string     `json:"lessons_status" binding:"required,oneof=пропущен проведен запланирован отменен"`
 	}
 
 	type AttendanceFreezeInput struct {

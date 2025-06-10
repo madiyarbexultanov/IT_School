@@ -60,8 +60,6 @@ func main() {
 		logger.Fatal("Database connection failed", zap.Error(err))
 	}
 
-
-
 	r.Use(func(c *gin.Context) {
 		c.Set("db", conn)
 		c.Next()
@@ -141,7 +139,6 @@ func main() {
 	settingsRoutes.DELETE("/attendance/:id", AttendanceHandlers.Delete)
 
 	attendanceGroup := privateRoutes.Group("/attendances")
-	
 	{
 		attendanceGroup.POST("", AttendanceHandlers.CreateAttendance)
 		attendanceGroup.GET("/:studentId", AttendanceHandlers.GetByStudent)
