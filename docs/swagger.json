@@ -41,6 +41,53 @@
                 }
             }
         },
+        "/attendances/student/{studentId}": {
+            "get": {
+                "description": "Возвращает список всех посещений с детализацией по типам (уроки/заморозки/пролонгации)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Attendance"
+                ],
+                "summary": "Получить посещаемость студента",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "UUID студента",
+                        "name": "studentId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/handlers.AttendanceFullResponse"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/models.ApiError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.ApiError"
+                        }
+                    }
+                }
+            }
+        },
         "/attendances/{attendanceId}": {
             "put": {
                 "description": "Обновляет запись посещаемости (урок, заморозка или пролонгация)\nДопустимые значения:\n- type: урок, заморозка, пролонгация\n- lessons_status: пропущен, проведен, запланирован, отменен\n- payment_type: оплата, предоплата, доплата",
@@ -90,51 +137,6 @@
                     },
                     "404": {
                         "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/models.ApiError"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/models.ApiError"
-                        }
-                    }
-                }
-            }
-        },
-        "/attendances/{studentId}": {
-            "get": {
-                "description": "Возвращает список всех посещений, заморозок и пролонгаций по студенту",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Attendance"
-                ],
-                "summary": "Получить посещаемость студента",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "UUID студента",
-                        "name": "studentId",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {}
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/models.ApiError"
                         }
@@ -1449,6 +1451,23 @@
                 }
             }
         },
+        "handlers.AttendanceFullResponse": {
+            "type": "object",
+            "properties": {
+                "attendance": {
+                    "$ref": "#/definitions/models.Attendance"
+                },
+                "freeze": {
+                    "$ref": "#/definitions/models.AttendanceFreeze"
+                },
+                "lesson": {
+                    "$ref": "#/definitions/models.AttendanceLesson"
+                },
+                "prolongation": {
+                    "$ref": "#/definitions/models.AttendanceProlongation"
+                }
+            }
+        },
         "handlers.AttendanceLessonInput": {
             "type": "object",
             "required": [
@@ -1471,7 +1490,13 @@
                     "type": "string"
                 },
                 "lessons_status": {
-                    "type": "string"
+                    "type": "string",
+                    "enum": [
+                        "пропущен",
+                        "проведен",
+                        "запланирован",
+                        "отменен"
+                    ]
                 }
             }
         },
@@ -1729,6 +1754,93 @@
             "type": "object",
             "properties": {
                 "error": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.Attendance": {
+            "type": "object",
+            "properties": {
+                "course_id": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "student_id": {
+                    "type": "string"
+                },
+                "type": {
+                    "description": "lesson, freeze, prolongation",
+                    "type": "string"
+                }
+            }
+        },
+        "models.AttendanceFreeze": {
+            "type": "object",
+            "properties": {
+                "attendance_id": {
+                    "type": "string"
+                },
+                "comment": {
+                    "type": "string"
+                },
+                "end_date": {
+                    "type": "string"
+                },
+                "start_date": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.AttendanceLesson": {
+            "type": "object",
+            "properties": {
+                "attendance_id": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "curator_id": {
+                    "type": "string"
+                },
+                "date": {
+                    "type": "string"
+                },
+                "feedback": {
+                    "type": "string"
+                },
+                "feedback_date": {
+                    "type": "string"
+                },
+                "format": {
+                    "type": "string"
+                },
+                "lessons_status": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.AttendanceProlongation": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "number"
+                },
+                "attendance_id": {
+                    "type": "string"
+                },
+                "comment": {
+                    "type": "string"
+                },
+                "date": {
+                    "type": "string"
+                },
+                "payment_type": {
                     "type": "string"
                 }
             }

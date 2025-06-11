@@ -8,6 +8,17 @@ definitions:
       start_date:
         type: string
     type: object
+  handlers.AttendanceFullResponse:
+    properties:
+      attendance:
+        $ref: '#/definitions/models.Attendance'
+      freeze:
+        $ref: '#/definitions/models.AttendanceFreeze'
+      lesson:
+        $ref: '#/definitions/models.AttendanceLesson'
+      prolongation:
+        $ref: '#/definitions/models.AttendanceProlongation'
+    type: object
   handlers.AttendanceLessonInput:
     properties:
       curator_id:
@@ -21,6 +32,11 @@ definitions:
       format:
         type: string
       lessons_status:
+        enum:
+        - пропущен
+        - проведен
+        - запланирован
+        - отменен
         type: string
     required:
     - lessons_status
@@ -197,6 +213,63 @@ definitions:
       error:
         type: string
     type: object
+  models.Attendance:
+    properties:
+      course_id:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: string
+      student_id:
+        type: string
+      type:
+        description: lesson, freeze, prolongation
+        type: string
+    type: object
+  models.AttendanceFreeze:
+    properties:
+      attendance_id:
+        type: string
+      comment:
+        type: string
+      end_date:
+        type: string
+      start_date:
+        type: string
+    type: object
+  models.AttendanceLesson:
+    properties:
+      attendance_id:
+        type: string
+      created_at:
+        type: string
+      curator_id:
+        type: string
+      date:
+        type: string
+      feedback:
+        type: string
+      feedback_date:
+        type: string
+      format:
+        type: string
+      lessons_status:
+        type: string
+    type: object
+  models.AttendanceProlongation:
+    properties:
+      amount:
+        type: number
+      attendance_id:
+        type: string
+      comment:
+        type: string
+      date:
+        type: string
+      payment_type:
+        type: string
+    type: object
   models.Course:
     properties:
       id:
@@ -357,11 +430,11 @@ paths:
       summary: Обновить запись посещаемости
       tags:
       - Attendance
-  /attendances/{studentId}:
+  /attendances/student/{studentId}:
     get:
       consumes:
       - application/json
-      description: Возвращает список всех посещений, заморозок и пролонгаций по студенту
+      description: Возвращает список всех посещений с детализацией по типам (уроки/заморозки/пролонгации)
       parameters:
       - description: UUID студента
         in: path
@@ -374,7 +447,8 @@ paths:
         "200":
           description: OK
           schema:
-            items: {}
+            items:
+              $ref: '#/definitions/handlers.AttendanceFullResponse'
             type: array
         "400":
           description: Bad Request

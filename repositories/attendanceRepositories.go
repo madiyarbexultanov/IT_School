@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"context"
+	"database/sql"
 	"it_school/models"
 
 	"github.com/google/uuid"
@@ -66,29 +67,138 @@ func (r *AttendanceRepository) CreateAttendance(c context.Context,attendance *mo
 	return attendance.ID, nil
 }
 
-func (r *AttendanceRepository) FindByStudent(c context.Context, studentID uuid.UUID) ([]models.Attendance, error) {
-	rows, err := r.db.Query(c, `
-		SELECT id, student_id, course_id, type, created_at
-		FROM attendance
-		WHERE student_id = $1
-		ORDER BY created_at DESC
-	`, studentID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
 
-	var attendances []models.Attendance
-	for rows.Next() {
-		var a models.Attendance
-		if err := rows.Scan(&a.ID, &a.StudentId, &a.CourseId, &a.Type, &a.CreatedAt); err != nil {
-			return nil, err
-		}
-		attendances = append(attendances, a)
-	}
+func (r *AttendanceRepository) FindFullByStudent(ctx context.Context, studentID uuid.UUID) ([]models.AttendanceFullResponse, error) {
+    rows, err := r.db.Query(ctx, `
+        SELECT 
+            a.id, a.student_id, a.course_id, a.type, a.created_at,
 
-	return attendances, nil
+            -- lesson
+            l.curator_id, l.date, l.format, l.feedback, l.lessons_status, l.feedbackdate,
+
+            -- freeze
+            f.start_date, f.end_date, f.comment,
+
+            -- prolongation
+            p.payment_type, p.date, p.amount, p.comment
+
+        FROM attendance a
+        LEFT JOIN attendance_lessons l ON a.id = l.attendance_id AND a.type = 'урок'
+        LEFT JOIN attendance_freezes f ON a.id = f.attendance_id AND a.type = 'заморозка'
+        LEFT JOIN attendance_prolongations p ON a.id = p.attendance_id AND a.type = 'пролонгация'
+        WHERE a.student_id = $1
+        ORDER BY a.created_at DESC
+    `, studentID)
+    if err != nil {
+        return nil, err
+    }
+    defer rows.Close()
+
+    var responses []models.AttendanceFullResponse
+
+    for rows.Next() {
+        var att models.Attendance
+
+        // lesson (nullable)
+        var lessonDate, feedbackDate sql.NullTime
+        var format, feedback, lessonStatus sql.NullString
+        var curatorID uuid.NullUUID
+
+        // freeze (nullable)
+        var startDate, endDate sql.NullTime
+        var freezeComment sql.NullString
+
+        // prolongation (nullable)
+        var paymentType, prolongComment sql.NullString
+        var prolongDate sql.NullTime
+        var amount sql.NullFloat64
+
+        err := rows.Scan(
+            &att.ID, &att.StudentId, &att.CourseId, &att.Type, &att.CreatedAt,
+            &curatorID, &lessonDate, &format, &feedback, &lessonStatus, &feedbackDate,
+            &startDate, &endDate, &freezeComment,
+            &paymentType, &prolongDate, &amount, &prolongComment,
+        )
+        if err != nil {
+            return nil, err
+        }
+
+        response := models.AttendanceFullResponse{
+            Attendance: &att,
+        }
+
+        switch att.Type {
+        case "урок":
+            lesson := models.AttendanceLesson{
+                AttendanceID: att.ID,
+            }
+
+            if curatorID.Valid {
+                lesson.CuratorId = curatorID.UUID
+            }
+            if lessonDate.Valid {
+                lesson.Date = lessonDate.Time
+            }
+            if format.Valid {
+                lesson.Format = &format.String
+            }
+            if feedback.Valid {
+                lesson.Feedback = &feedback.String
+            }
+            if feedbackDate.Valid {
+                lesson.FeedbackDate = &feedbackDate.Time
+            }
+            if lessonStatus.Valid {
+                lesson.LessonStatus = lessonStatus.String
+            }
+
+            response.Lesson = &lesson
+
+        case "заморозка":
+            freeze := models.AttendanceFreeze{
+                AttendanceID: att.ID,
+            }
+
+            if startDate.Valid {
+                freeze.StartDate = startDate.Time
+            }
+            if endDate.Valid {
+                freeze.EndDate = endDate.Time
+            }
+            if freezeComment.Valid {
+                freeze.Comment = &freezeComment.String
+            }
+
+            response.Freeze = &freeze
+
+        case "пролонгация":
+            prolongation := models.AttendanceProlongation{
+                AttendanceID: att.ID,
+            }
+
+            if paymentType.Valid {
+                prolongation.PaymentType = paymentType.String
+            }
+            if prolongDate.Valid {
+                prolongation.Date = prolongDate.Time
+            }
+            if amount.Valid {
+                prolongation.Amount = amount.Float64
+            }
+            if prolongComment.Valid {
+                prolongation.Comment = &prolongComment.String
+            }
+
+            response.Prolongation = &prolongation
+        }
+
+        responses = append(responses, response)
+    }
+
+    return responses, nil
 }
+
+
 
 func (r *AttendanceRepository) Update(c context.Context, attendance *models.Attendance, lesson *models.AttendanceLesson, freeze *models.AttendanceFreeze, prolongation *models.AttendanceProlongation) error {
 	tx, err := r.db.Begin(c)

@@ -194,34 +194,54 @@ func (h *AttendanceHandlers) CreateAttendance(c *gin.Context) {
 
 // GetByStudent godoc
 // @Summary Получить посещаемость студента
-// @Description Возвращает список всех посещений, заморозок и пролонгаций по студенту
+// @Description Возвращает список всех посещений с детализацией по типам (уроки/заморозки/пролонгации)
 // @Tags Attendance
 // @Accept json
 // @Produce json
 // @Param studentId path string true "UUID студента"
-// @Success 200 {array} interface{}
+// @Success 200 {array} AttendanceFullResponse
 // @Failure 400 {object} models.ApiError
 // @Failure 500 {object} models.ApiError
-// @Router /attendances/{studentId} [get]
+// @Router /attendances/student/{studentId} [get]
 func (h *AttendanceHandlers) GetByStudent(c *gin.Context) {
-	logger := logger.GetLogger()
+    logger := logger.GetLogger()
+    
+    // 1. Парсим и валидируем UUID студента
+    studentIDStr := c.Param("studentId")
+    studentID, err := uuid.Parse(studentIDStr)
+    if err != nil {
+        logger.Warn("Invalid student UUID format", zap.String("studentId", studentIDStr))
+        c.JSON(http.StatusBadRequest, models.NewApiError("Неверный формат UUID студента"))
+        return
+    }
 
-	// Кажетется из за парсинга айди студента так как айди приходит итак в UUID формате. А после парсинга данные меняются
-	studentIDStr := c.Param("studentId")
-	studentID, err := uuid.Parse(studentIDStr)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.NewApiError("Invalid student UUID"))
-		return
-	}
+    // 2. Получаем данные из репозитория
+    attendances, err := h.attendanceRepo.FindFullByStudent(c.Request.Context(), studentID)
+    if err != nil {
+        logger.Error("Failed to get attendances from DB", 
+            zap.String("studentId", studentID.String()),
+            zap.Error(err))
+        c.JSON(http.StatusInternalServerError, models.NewApiError("Ошибка при получении данных посещаемости"))
+        return
+    }
 
-	attendances, err := h.attendanceRepo.FindByStudent(c.Request.Context(), studentID)
-	if err != nil {
-		logger.Error("Couldn't get student's attendance", zap.Error(err))
-		c.JSON(http.StatusInternalServerError, models.NewApiError("Couldn't get data"))
-		return
-	}
+    // 3. Если нет данных - возвращаем пустой массив, а не ошибку
+    if len(attendances) == 0 {
+        logger.Info("No attendances found for student", zap.String("studentId", studentID.String()))
+        c.JSON(http.StatusOK, []AttendanceFullResponse{})
+        return
+    }
 
-	c.JSON(http.StatusOK, attendances)
+    // 4. Возвращаем успешный ответ
+    c.JSON(http.StatusOK, attendances)
+}
+
+// Структуры ответа
+type AttendanceFullResponse struct {
+    Attendance  *models.Attendance           `json:"attendance"`
+    Lesson      *models.AttendanceLesson     `json:"lesson,omitempty"`
+    Freeze      *models.AttendanceFreeze     `json:"freeze,omitempty"`
+    Prolongation *models.AttendanceProlongation `json:"prolongation,omitempty"`
 }
 
 // UpdateAttendance godoc
