@@ -39,3 +39,10 @@ type AttendanceProlongation struct {
 	Amount       float64   `json:"amount"`
 	Comment      *string   `json:"comment"`
 }
+
+type AttendanceFullResponse struct {
+    Attendance  *Attendance           `json:"attendance"`
+    Lesson      *AttendanceLesson     `json:"lesson,omitempty"`
+    Freeze      *AttendanceFreeze     `json:"freeze,omitempty"`
+    Prolongation *AttendanceProlongation `json:"prolongation,omitempty"`
+}
