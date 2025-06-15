@@ -41,8 +41,8 @@ type AttendanceProlongation struct {
 }
 
 type AttendanceFullResponse struct {
-    Attendance  *Attendance           `json:"attendance"`
-    Lesson      *AttendanceLesson     `json:"lesson,omitempty"`
-    Freeze      *AttendanceFreeze     `json:"freeze,omitempty"`
-    Prolongation *AttendanceProlongation `json:"prolongation,omitempty"`
+    Attendance  *Attendance           		`json:"attendance"`
+    Lesson      *AttendanceLesson     		`json:"lesson,omitempty"`
+    Freeze      *AttendanceFreeze     		`json:"freeze,omitempty"`
+    Prolongation *AttendanceProlongation 	`json:"prolongation,omitempty"`
 }

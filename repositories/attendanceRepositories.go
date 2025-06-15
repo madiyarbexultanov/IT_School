@@ -133,63 +133,88 @@ func (r *AttendanceRepository) FindFullByStudent(ctx context.Context, studentID 
                 AttendanceID: att.ID,
             }
 
+            hasData := false
+
             if curatorID.Valid {
                 lesson.CuratorId = curatorID.UUID
+                hasData = true
             }
             if lessonDate.Valid {
                 lesson.Date = lessonDate.Time
+                hasData = true
             }
             if format.Valid {
                 lesson.Format = &format.String
+                hasData = true
             }
             if feedback.Valid {
                 lesson.Feedback = &feedback.String
+                hasData = true
             }
             if feedbackDate.Valid {
                 lesson.FeedbackDate = &feedbackDate.Time
+                hasData = true
             }
             if lessonStatus.Valid {
                 lesson.LessonStatus = lessonStatus.String
+                hasData = true
             }
 
-            response.Lesson = &lesson
+            if hasData {
+                response.Lesson = &lesson
+            }
 
         case "заморозка":
             freeze := models.AttendanceFreeze{
                 AttendanceID: att.ID,
             }
 
+            hasData := false
+
             if startDate.Valid {
                 freeze.StartDate = startDate.Time
+                hasData = true
             }
             if endDate.Valid {
                 freeze.EndDate = endDate.Time
+                hasData = true
             }
             if freezeComment.Valid {
                 freeze.Comment = &freezeComment.String
+                hasData = true
             }
 
-            response.Freeze = &freeze
+            if hasData {
+                response.Freeze = &freeze
+            }
 
         case "пролонгация":
             prolongation := models.AttendanceProlongation{
                 AttendanceID: att.ID,
             }
 
+            hasData := false
+
             if paymentType.Valid {
                 prolongation.PaymentType = paymentType.String
+                hasData = true
             }
             if prolongDate.Valid {
                 prolongation.Date = prolongDate.Time
+                hasData = true
             }
             if amount.Valid {
                 prolongation.Amount = amount.Float64
+                hasData = true
             }
             if prolongComment.Valid {
                 prolongation.Comment = &prolongComment.String
+                hasData = true
             }
 
-            response.Prolongation = &prolongation
+            if hasData {
+                response.Prolongation = &prolongation
+            }
         }
 
         responses = append(responses, response)
