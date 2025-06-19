@@ -52,6 +52,7 @@ func (r *RoleRepository) GetRoleByName(c context.Context, name string) (*models.
 	return &role, nil
 }
 
+
 func (r *RoleRepository) Create(ctx context.Context, role *models.Role) error {
     data, _ := json.Marshal(role.Permissions)
     _, err := r.db.Exec(ctx,

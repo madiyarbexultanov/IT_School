@@ -94,6 +94,8 @@ func main() {
 	UserHandler := handlers.NewUserHandlers(UsersRepository, CuratorsRepository, RolesRepository)
 	resetPasswordHandler := handlers.NewResetPasswordHandler(AuthRepository, UsersRepository)
 
+	r.GET("/role/:id", UserHandler.GetRole)
+
 	// Маршруты для аутентификации
 	authGroup := r.Group("/auth")
 	{
@@ -130,6 +132,7 @@ func main() {
 	settingsRoutes.GET("/users/:userId", UserHandler.FindById)
 	settingsRoutes.GET("/users", UserHandler.FindAll)
 	settingsRoutes.PUT("/users/:userId", UserHandler.Update)
+	settingsRoutes.PUT("/users/:userId/role", UserHandler.UpdateUserRole)
 	settingsRoutes.DELETE("/users/:userId", UserHandler.Delete)
 
 	// Получение списков Менеджеров и Кураторов

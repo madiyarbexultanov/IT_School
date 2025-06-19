@@ -18,6 +18,7 @@ func NewRUsersRepository(conn *pgxpool.Pool) *UsersRepository {
 }
 
 
+
 func (r *UsersRepository) FindAll(c context.Context, roleID *uuid.UUID) ([]models.User, error) {
 	var (
 		rows pgx.Rows
@@ -55,8 +56,6 @@ func (r *UsersRepository) FindAll(c context.Context, roleID *uuid.UUID) ([]model
 
 	return users, nil
 }
-
-
 
 
 func (r *UsersRepository) FindById(c context.Context, id uuid.UUID) (models.User, error) {
@@ -100,6 +99,21 @@ func (r *UsersRepository) Update(c context.Context, id uuid.UUID, user models.Us
 	}
 	return nil
 }
+
+func (r *UsersRepository) UpdateUserRole(ctx context.Context, userID, roleID uuid.UUID) error {
+    query := `
+        UPDATE users
+        SET role_id = $1
+        WHERE id = $2
+    `
+    _, err := r.db.Exec(ctx, query, roleID, userID)
+    if err != nil {
+        return err
+    }
+    return nil
+}
+
+
 
 func (r *UsersRepository) Delete(c context.Context, id uuid.UUID) error {
 	_, err := r.db.Exec(c, "delete from users where id=$1", id)
