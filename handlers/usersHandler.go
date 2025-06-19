@@ -37,6 +37,16 @@ type CuratorResponse struct {
     CourseIDs  []uuid.UUID `json:"course_ids"`
 }
 
+type UserResponse struct {
+    ID                  uuid.UUID  `json:"id"`
+    FullName            string     `json:"full_name"`
+    Email               string     `json:"email"`
+    Telephone           string     `json:"telephone"`
+    RoleId              uuid.UUID  `json:"roleId"`
+    RoleName            string  	`json:"role_name"`
+}
+
+
 func NewUserHandlers(usersRepo *repositories.UsersRepository, curatorRepo *repositories.CuratorsRepository, roleRepo *repositories.RoleRepository) *UserHandler {
 	return &UserHandler{
 		usersRepo: usersRepo,
@@ -62,7 +72,7 @@ func (h *UserHandler) FindAll(c *gin.Context) {
 	var roleID *uuid.UUID
 
 	if roleParam != "" {
-		id, err := uuid.Parse(roleParam) // 👈 правильно парсим UUID
+		id, err := uuid.Parse(roleParam) //  правильно парсим UUID
 		if err != nil {
 			logger.Warn("Invalid role query param", zap.String("role", roleParam))
 			c.JSON(http.StatusBadRequest, models.NewApiError("Invalid role parameter"))
@@ -80,6 +90,44 @@ func (h *UserHandler) FindAll(c *gin.Context) {
 
 	logger.Info("Successfully retrieved users", zap.Int("count", len(users)))
 	c.JSON(http.StatusOK, users)
+}
+
+// GetRole godoc
+// @Summary Получить название роли по его id
+// @Description Возвращает строковое представление роли по заданному UUID
+// @Security ApiKeyAuth
+// @Param id path string true "ID роли"
+// @Success 200 {object} map[string]string
+// @Failure 400 {object} models.ApiError            
+// @Failure 404 {object} models.ApiError             
+// @Failure 500 {object} models.ApiError            
+// @Router /role/{id} [get]
+func (h *UserHandler) GetRole(c *gin.Context) {
+    logger := logger.GetLogger()
+
+    idParam := c.Param("id")
+    if idParam == "" {
+        logger.Error("Missing role id query parameter")
+        c.JSON(http.StatusBadRequest, models.NewApiError("role parameter is required"))
+        return
+    }
+
+    id, err := uuid.Parse(idParam)
+    if err != nil {
+        logger.Error("Invalid UUID format for role", zap.String("roleParam", idParam), zap.Error(err))
+        c.JSON(http.StatusBadRequest, models.NewApiError("invalid role id format"))
+        return
+    }
+
+    role, err := h.roleRepo.GetRoleByID(c, id)
+    if err != nil {
+        logger.Error("Failed to get role name from repository", zap.Error(err))
+        c.JSON(http.StatusInternalServerError, models.NewApiError("could not get role name"))
+        return
+    }
+
+    logger.Info("Successfully retrieved role name", zap.Any("role", role))
+    c.JSON(http.StatusOK, gin.H{"role": role})
 }
 
 // FindManagers godoc
@@ -160,27 +208,41 @@ func (h *UserHandler) FindCurators(c *gin.Context) {
 // @Failure 404 {object} models.ApiError "Пользователь не найден"
 // @Router /settings/users/{userId} [get]
 func (h *UserHandler) FindById(c *gin.Context) {
-	logger := logger.GetLogger()
+    logger := logger.GetLogger()
 
-	idStr := c.Param("userId")
-	id, err := uuid.Parse(idStr)
+    id, err := uuid.Parse(c.Param("userId"))
+    if err != nil {
+        logger.Error("Invalid user id", zap.String("userId", c.Param("userId")), zap.Error(err))
+        c.JSON(http.StatusBadRequest, models.NewApiError("invalid user id"))
+        return
+    }
 
-	if err != nil {
-		logger.Error("Invalid user id", zap.String("id", idStr))
-		c.JSON(http.StatusBadRequest, models.NewApiError("Invalid user id"))
-		return
-	}
+    user, err := h.usersRepo.FindById(c.Request.Context(), id)
+    if err != nil {
+        logger.Error("Failed fetching user", zap.Error(err))
+        c.JSON(http.StatusNotFound, models.NewApiError("user not found"))
+        return
+    }
 
-	user, err := h.usersRepo.FindById(c, id)
-	if err != nil {
-		logger.Error("Failed to find user", zap.String("userID", id.String()), zap.Error(err))
-		c.JSON(http.StatusNotFound, models.NewApiError(err.Error()))
-		return
-	}
+	role, err := h.roleRepo.GetRoleByID(c.Request.Context(), user.RoleID)
+    if err != nil {
+        logger.Error("Failed to get user role", zap.String("user_id", user.Id.String()), zap.Error(err))
+        c.JSON(http.StatusInternalServerError, models.NewApiError("Couldn't find role"))
+        return
+    }
 
-	logger.Info("User found", zap.String("userID", id.String()), zap.String("name", user.Full_name))
-	c.JSON(http.StatusOK, user)
+    resp := UserResponse{
+        ID:        user.Id,
+        FullName:  user.Full_name,
+        Email:     user.Email,
+        Telephone: user.Telephone,
+        RoleId:    role.Id,
+		RoleName:  role.Name,
+    }
+
+    c.JSON(http.StatusOK, resp)
 }
+
 
 // Create godoc
 // @Summary Создать пользователя
@@ -307,6 +369,50 @@ func (h *UserHandler) Update(c *gin.Context) {
 	logger.Info("User updated successfully", zap.String("userID", id.String()))
 	c.Status(http.StatusOK)
 }
+
+// @Summary Обновить роль пользователя
+// @Security ApiKeyAuth
+// @Tags users
+// @Param userId path string true "ID пользователя"
+// @Param roleId query string true "ID новой роли"
+// @Success 200 {object} map[string]string "role updated successfully"
+// @Failure 400 {object} models.ApiError
+// @Failure 500 {object} models.ApiError
+// @Router /users/{userId}/role [put]
+func (h *UserHandler) UpdateUserRole(c *gin.Context) {
+    logger := logger.GetLogger()
+
+    userID, err := uuid.Parse(c.Param("userId"))
+    if err != nil {
+        logger.Error("Invalid user id", zap.String("userId", c.Param("userId")), zap.Error(err))
+        c.JSON(http.StatusBadRequest, models.NewApiError("invalid user id"))
+        return
+    }
+
+    roleIDParam := c.Query("roleId")
+    if roleIDParam == "" {
+        logger.Error("Missing roleId parameter")
+        c.JSON(http.StatusBadRequest, models.NewApiError("roleId is required"))
+        return
+    }
+
+    roleID, err := uuid.Parse(roleIDParam)
+    if err != nil {
+        logger.Error("Invalid role id", zap.String("roleId", roleIDParam), zap.Error(err))
+        c.JSON(http.StatusBadRequest, models.NewApiError("invalid role id format"))
+        return
+    }
+
+    if err := h.usersRepo.UpdateUserRole(c.Request.Context(), userID, roleID); err != nil {
+        logger.Error("Failed to update user role", zap.String("userId", userID.String()), zap.Error(err))
+        c.JSON(http.StatusInternalServerError, models.NewApiError("could not update user role"))
+        return
+    }
+
+    logger.Info("User role updated", zap.String("userId", userID.String()), zap.String("roleId", roleID.String()))
+    c.JSON(http.StatusOK, gin.H{"message": "role updated successfully"})
+}
+
 
 // Delete godoc
 // @Summary Удалить пользователя

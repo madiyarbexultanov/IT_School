@@ -606,6 +606,37 @@ paths:
       summary: Запрос сброса пароля
       tags:
       - Auth
+  /role/{id}:
+    get:
+      description: Возвращает строковое представление роли по заданному UUID
+      parameters:
+      - description: ID роли
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ApiError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.ApiError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ApiError'
+      security:
+      - ApiKeyAuth: []
+      summary: Получить название роли по его id
   /settings/attendance/{id}:
     delete:
       consumes:
@@ -1316,4 +1347,37 @@ paths:
       summary: Получить список менеджеров
       tags:
       - Users
+  /users/{userId}/role:
+    put:
+      parameters:
+      - description: ID пользователя
+        in: path
+        name: userId
+        required: true
+        type: string
+      - description: ID новой роли
+        in: query
+        name: roleId
+        required: true
+        type: string
+      responses:
+        "200":
+          description: role updated successfully
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ApiError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ApiError'
+      security:
+      - ApiKeyAuth: []
+      summary: Обновить роль пользователя
+      tags:
+      - users
 swagger: "2.0"
