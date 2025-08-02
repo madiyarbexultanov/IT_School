@@ -161,13 +161,13 @@ func (h *StudentsHandlers) Create(c *gin.Context) {
 // FindById godoc
 // @Summary Получить данные студента
 // @Description Возвращает полную информацию о студенте по его ID
-// @Tags Students
+// @Tags Managers
 // @Produce json
 // @Param studentId path string true "UUID студента" format(uuid)
 // @Success 200 {object} models.Student "Данные студента"
 // @Failure 400 {object} models.ApiError "Неверный формат UUID"
 // @Failure 404 {object} models.ApiError "Студент не найден"
-// @Router /settings/students/{studentId} [get]
+// @Router /managers/students/{studentId} [get]
 func (h *StudentsHandlers) FindById(c *gin.Context) {
     logger := logger.GetLogger()
     idStr := c.Param("studentId")
@@ -204,7 +204,7 @@ func (h *StudentsHandlers) FindById(c *gin.Context) {
 // @Description - is_active: активен, неактивен
 // @Description - created_at: дата в формате DD.MM.YYYY
 // @Description - phone_number: международный формат (+7XXX...)
-// @Tags Students
+// @Tags Managers
 // @Accept json
 // @Produce json
 // @Param studentId path string true "UUID студента" format(uuid)
@@ -214,7 +214,7 @@ func (h *StudentsHandlers) FindById(c *gin.Context) {
 // @Failure 400 {object} models.ApiError "Неверный формат данных"
 // @Failure 404 {object} models.ApiError "Студент не найден"
 // @Failure 500 {object} models.ApiError "Ошибка сервера"
-// @Router /settings/students/{studentId} [put]
+// @Router /manager/students/{studentId} [put]
 func (h *StudentsHandlers) Update(c *gin.Context) {
     logger := logger.GetLogger()
     idStr := c.Param("studentId")
@@ -309,7 +309,7 @@ func (h *StudentsHandlers) Update(c *gin.Context) {
 // @Param curator_id query string false "Фильтр по ID куратора" format(uuid)
 // @Success 200 {array} models.Student "Список студентов"
 // @Failure 500 {object} models.ApiError "Ошибка сервера"
-// @Router /settings/students [get]
+// @Router /managers/students [get]
 func (h *StudentsHandlers) FindAll(c *gin.Context) {
     logger := logger.GetLogger()
 

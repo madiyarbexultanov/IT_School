@@ -369,6 +369,116 @@
                 }
             }
         },
+        "/manager/students/{studentId}": {
+            "get": {
+                "description": "Возвращает полную информацию о студенте по его ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Managers"
+                ],
+                "summary": "Получить данные студента",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "UUID студента",
+                        "name": "studentId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Данные студента",
+                        "schema": {
+                            "$ref": "#/definitions/models.Student"
+                        }
+                    },
+                    "400": {
+                        "description": "Неверный формат UUID",
+                        "schema": {
+                            "$ref": "#/definitions/models.ApiError"
+                        }
+                    },
+                    "404": {
+                        "description": "Студент не найден",
+                        "schema": {
+                            "$ref": "#/definitions/models.ApiError"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Обновляет информацию о существующем студенте. Допустимые значения:\n- is_active: активен, неактивен\n- created_at: дата в формате DD.MM.YYYY\n- phone_number: международный формат (+7XXX...)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Managers"
+                ],
+                "summary": "Обновить данные студента",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "UUID студента",
+                        "name": "studentId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Статус студента",
+                        "name": "is_active",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "активен",
+                                "неактивен"
+                            ]
+                        }
+                    },
+                    {
+                        "description": "Обновленные данные",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.updateStudentRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Данные успешно обновлены"
+                    },
+                    "400": {
+                        "description": "Неверный формат данных",
+                        "schema": {
+                            "$ref": "#/definitions/models.ApiError"
+                        }
+                    },
+                    "404": {
+                        "description": "Студент не найден",
+                        "schema": {
+                            "$ref": "#/definitions/models.ApiError"
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка сервера",
+                        "schema": {
+                            "$ref": "#/definitions/models.ApiError"
+                        }
+                    }
+                }
+            }
+        },
         "/role/{id}": {
             "get": {
                 "security": [
@@ -1039,114 +1149,6 @@
             }
         },
         "/settings/students/{studentId}": {
-            "get": {
-                "description": "Возвращает полную информацию о студенте по его ID",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Students"
-                ],
-                "summary": "Получить данные студента",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "format": "uuid",
-                        "description": "UUID студента",
-                        "name": "studentId",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Данные студента",
-                        "schema": {
-                            "$ref": "#/definitions/models.Student"
-                        }
-                    },
-                    "400": {
-                        "description": "Неверный формат UUID",
-                        "schema": {
-                            "$ref": "#/definitions/models.ApiError"
-                        }
-                    },
-                    "404": {
-                        "description": "Студент не найден",
-                        "schema": {
-                            "$ref": "#/definitions/models.ApiError"
-                        }
-                    }
-                }
-            },
-            "put": {
-                "description": "Обновляет информацию о существующем студенте. Допустимые значения:\n- is_active: активен, неактивен\n- created_at: дата в формате DD.MM.YYYY\n- phone_number: международный формат (+7XXX...)",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Students"
-                ],
-                "summary": "Обновить данные студента",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "format": "uuid",
-                        "description": "UUID студента",
-                        "name": "studentId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Статус студента",
-                        "name": "is_active",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "string",
-                            "enum": [
-                                "активен",
-                                "неактивен"
-                            ]
-                        }
-                    },
-                    {
-                        "description": "Обновленные данные",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/handlers.updateStudentRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Данные успешно обновлены"
-                    },
-                    "400": {
-                        "description": "Неверный формат данных",
-                        "schema": {
-                            "$ref": "#/definitions/models.ApiError"
-                        }
-                    },
-                    "404": {
-                        "description": "Студент не найден",
-                        "schema": {
-                            "$ref": "#/definitions/models.ApiError"
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка сервера",
-                        "schema": {
-                            "$ref": "#/definitions/models.ApiError"
-                        }
-                    }
-                }
-            },
             "delete": {
                 "description": "Удаляет запись о студенте из системы",
                 "tags": [

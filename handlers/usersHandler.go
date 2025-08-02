@@ -372,7 +372,7 @@ func (h *UserHandler) Update(c *gin.Context) {
 
 // @Summary Обновить роль пользователя
 // @Security ApiKeyAuth
-// @Tags users
+// @Tags Users
 // @Param userId path string true "ID пользователя"
 // @Param roleId query string true "ID новой роли"
 // @Success 200 {object} map[string]string "role updated successfully"
