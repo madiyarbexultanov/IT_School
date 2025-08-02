@@ -606,6 +606,84 @@ paths:
       summary: Запрос сброса пароля
       tags:
       - Auth
+  /manager/students/{studentId}:
+    get:
+      description: Возвращает полную информацию о студенте по его ID
+      parameters:
+      - description: UUID студента
+        format: uuid
+        in: path
+        name: studentId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Данные студента
+          schema:
+            $ref: '#/definitions/models.Student'
+        "400":
+          description: Неверный формат UUID
+          schema:
+            $ref: '#/definitions/models.ApiError'
+        "404":
+          description: Студент не найден
+          schema:
+            $ref: '#/definitions/models.ApiError'
+      summary: Получить данные студента
+      tags:
+      - Managers
+    put:
+      consumes:
+      - application/json
+      description: |-
+        Обновляет информацию о существующем студенте. Допустимые значения:
+        - is_active: активен, неактивен
+        - created_at: дата в формате DD.MM.YYYY
+        - phone_number: международный формат (+7XXX...)
+      parameters:
+      - description: UUID студента
+        format: uuid
+        in: path
+        name: studentId
+        required: true
+        type: string
+      - description: Статус студента
+        in: body
+        name: is_active
+        required: true
+        schema:
+          enum:
+          - активен
+          - неактивен
+          type: string
+      - description: Обновленные данные
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.updateStudentRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Данные успешно обновлены
+        "400":
+          description: Неверный формат данных
+          schema:
+            $ref: '#/definitions/models.ApiError'
+        "404":
+          description: Студент не найден
+          schema:
+            $ref: '#/definitions/models.ApiError'
+        "500":
+          description: Ошибка сервера
+          schema:
+            $ref: '#/definitions/models.ApiError'
+      summary: Обновить данные студента
+      tags:
+      - Managers
   /role/{id}:
     get:
       description: Возвращает строковое представление роли по заданному UUID
@@ -1069,83 +1147,6 @@ paths:
           schema:
             $ref: '#/definitions/models.ApiError'
       summary: Удалить студента
-      tags:
-      - Students
-    get:
-      description: Возвращает полную информацию о студенте по его ID
-      parameters:
-      - description: UUID студента
-        format: uuid
-        in: path
-        name: studentId
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Данные студента
-          schema:
-            $ref: '#/definitions/models.Student'
-        "400":
-          description: Неверный формат UUID
-          schema:
-            $ref: '#/definitions/models.ApiError'
-        "404":
-          description: Студент не найден
-          schema:
-            $ref: '#/definitions/models.ApiError'
-      summary: Получить данные студента
-      tags:
-      - Students
-    put:
-      consumes:
-      - application/json
-      description: |-
-        Обновляет информацию о существующем студенте. Допустимые значения:
-        - is_active: активен, неактивен
-        - created_at: дата в формате DD.MM.YYYY
-        - phone_number: международный формат (+7XXX...)
-      parameters:
-      - description: UUID студента
-        format: uuid
-        in: path
-        name: studentId
-        required: true
-        type: string
-      - description: Статус студента
-        in: body
-        name: is_active
-        required: true
-        schema:
-          enum:
-          - активен
-          - неактивен
-          type: string
-      - description: Обновленные данные
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/handlers.updateStudentRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Данные успешно обновлены
-        "400":
-          description: Неверный формат данных
-          schema:
-            $ref: '#/definitions/models.ApiError'
-        "404":
-          description: Студент не найден
-          schema:
-            $ref: '#/definitions/models.ApiError'
-        "500":
-          description: Ошибка сервера
-          schema:
-            $ref: '#/definitions/models.ApiError'
-      summary: Обновить данные студента
       tags:
       - Students
   /settings/users:
